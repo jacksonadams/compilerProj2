@@ -82,41 +82,66 @@ public class CMinusParser implements Parser {
 
         }
 
-        public void print (String pSpace) {
-            String mySpace = pSpace + "    ";
+        public void print (String parentSpace) {
+            String mySpace = parentSpace + "    ";
         }
     }
     public class Param { 
         // example: int x
+        public Param (VarExpression paramName){
+
+        }
     }
     public class Decl { 
         // abstract, will be either varDecl or funDecl
     }
     public class VarDecl { 
-        // example: int x 
-        // or int x = 10
+        // example: int x;
+        // or int x = 10;
+        public VarDecl(VarExpression LHS, Expression RHS){
+            
+        }
     }
     public class FunDecl { 
         // example: int gcd (int x, int y) { }
+        public FunDecl (VarExpression funcName, Param[] params) {
+
+        }
     }
     public class Statement { 
         // abstract, will be one of the other 5 statements
     }
     public class ExpressionStmt { 
         // example: a = 3;
+        public ExpressionStmt (VarExpression LHS, Expression RHS){
+
+        }
     }
     public class CompoundStmt { 
         // a sequence of other statements inside { }
         // example: { x = 3; y = y + 3; }
+        public CompoundStmt (Statement[] statements){
+
+        }
     }
     public class SelectionStmt { 
         // example: if (statement) { } else { }
+        public SelectionStmt (Expression condition, CompoundStmt ifSequence, CompoundStmt elseSequence){
+
+        }
     }
     public class IterationStmt { 
         // example: while (x > 0) { }
+        public IterationStmt (Expression condition, CompoundStmt sequence){
+
+        }
     }
     public class ReturnStmt { 
         // example: return x;
+        // could also be blank: return;
+        public ReturnStmt (Expression LHS){
+
+        }
     }
     public class Expression { 
         // abstract expression, will be one of the other 5
@@ -136,16 +161,22 @@ public class CMinusParser implements Parser {
     }
     public class CallExpression {
         // example: gcd(3, 4)
-        public CallExpression (VarExpression LHS, Param[] params){
+        public CallExpression (VarExpression LHS, Expression[] args){
 
         }
     }
     public class NumExpression {
         // example: 3
+        public NumExpression (int num){
+
+        }
 
     }
     public class VarExpression {
         // example: x
+        public VarExpression (String var){
+
+        }
     }
 
     /* Parse Functions */
