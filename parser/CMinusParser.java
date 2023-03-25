@@ -1,5 +1,7 @@
 package parser;
 
+import scanner.Token.TokenType;
+
 public class CMinusParser implements Parser {
     /* 
         This is a recursive descent parser.
@@ -61,29 +63,97 @@ public class CMinusParser implements Parser {
         2. advanceToken() - just advance
         3. checkToken() - just check
      */
-    
-    public class Program { }
-    public class Param { }
-    public class Decl { }
-    public class VarDecl { }
-    public class FunDecl { }
-    public class Statement { }
-    public class ExpressionStmt { }
-    public class CompoundStmt { }
-    public class SelectionStmt { }
-    public class IterationStmt { }
-    public class ReturnStmt { }
-    public class Expression { }
-    public class AssignExpression { }
-    public class BinaryExpression { }
-    public class CallExpression { }
-    public class NumExpression { }
-    public class VarExpression { }
 
+    /* Helper functions */
+    public void checkToken (TokenType token){
+
+    }
+    public void advanceToken (){
+
+    }
+    public void matchToken(TokenType token) {
+        checkToken(token);
+        advanceToken();
+    }
+    
+    /* 17 classes */
+    public class Program {
+        public Program(Decl[] declList) {
+
+        }
+
+        public void print (String pSpace) {
+            String mySpace = pSpace + "    ";
+        }
+    }
+    public class Param { 
+        // example: int x
+    }
+    public class Decl { 
+        // abstract, will be either varDecl or funDecl
+    }
+    public class VarDecl { 
+        // example: int x 
+        // or int x = 10
+    }
+    public class FunDecl { 
+        // example: int gcd (int x, int y) { }
+    }
+    public class Statement { 
+        // abstract, will be one of the other 5 statements
+    }
+    public class ExpressionStmt { 
+        // example: a = 3;
+    }
+    public class CompoundStmt { 
+        // a sequence of other statements inside { }
+        // example: { x = 3; y = y + 3; }
+    }
+    public class SelectionStmt { 
+        // example: if (statement) { } else { }
+    }
+    public class IterationStmt { 
+        // example: while (x > 0) { }
+    }
+    public class ReturnStmt { 
+        // example: return x;
+    }
+    public class Expression { 
+        // abstract expression, will be one of the other 5
+    }
+    public class AssignExpression { 
+        // example: x = y, x = 3
+        // has to be a var on the left
+        public AssignExpression (VarExpression LHS, Expression RHS) {
+
+        }
+    }
+    public class BinaryExpression {
+        // example: 3 + 4, a + b
+        public BinaryExpression (Expression LHS, TokenType op, Expression RHS){
+
+        }
+    }
+    public class CallExpression {
+        // example: gcd(3, 4)
+        public CallExpression (VarExpression LHS, Param[] params){
+
+        }
+    }
+    public class NumExpression {
+        // example: 3
+
+    }
+    public class VarExpression {
+        // example: x
+    }
+
+    /* Parse Functions */
     public void parseProgram (){
 
     }
 
+    /* Print AST */
     public void printTree(){
 
     }
