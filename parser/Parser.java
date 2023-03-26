@@ -1,6 +1,7 @@
 package parser;
+import parser.CMinusParser.Program;
 
 public interface Parser {
-    public void parseProgram();
+    public Program parseProgram();
     public void printTree();
 }

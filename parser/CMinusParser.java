@@ -1,5 +1,9 @@
 package parser;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import scanner.CMinusScanner;
 import scanner.Token.TokenType;
 
 public class CMinusParser implements Parser {
@@ -64,21 +68,32 @@ public class CMinusParser implements Parser {
         3. checkToken() - just check
      */
 
-    /* Helper functions */
-    public void checkToken (TokenType token){
+    /* Constructor */
+    private CMinusScanner scanner;
+    public CMinusParser(CMinusScanner inScanner){
+        scanner = inScanner;
+    }
 
+
+    /* Helper functions */
+    public Boolean checkToken (TokenType token){
+        if(scanner.viewNextToken().getType() == token){
+            return true;
+        }
+        return false;
     }
     public void advanceToken (){
-
+        scanner.getNextToken();
     }
     public void matchToken(TokenType token) {
-        checkToken(token);
-        advanceToken();
+        if(scanner.getNextToken().getType() != token){
+            // throw error, otherwise do nothing
+        }
     }
     
     /* 17 classes */
     public class Program {
-        public Program(Decl[] declList) {
+        public Program(List<Decl> declList) {
 
         }
 
@@ -180,9 +195,73 @@ public class CMinusParser implements Parser {
     }
 
     /* Parse Functions */
-    public void parseProgram (){
+    public Program parseProgram (){
+        // program -> decl {decl}
+        // first(program) = {void, int}
+        // follow(program) = {$}
 
+        // Program returnProgram = new Program();
+
+        List<Decl> declList = new ArrayList<Decl>();
+
+        // check if next token is in first set
+        while(checkToken(TokenType.INT_TOKEN) || checkToken(TokenType.VOID_TOKEN)){
+            Decl nextDecl = parseDecl();
+            declList.add(nextDecl);
+        }
+
+        // if we're no longer in the first set, check if we're in the follow set - if yes, continue, if not, error
+        if(!checkToken(TokenType.EOF_TOKEN)){
+            // throw error
+        }
+
+        return new Program(declList);
     }
+
+    private Decl parseDecl(){
+        // decl -> void ID fun-decl | int ID decl'
+        // first(decl) = {void, int}
+        // follow(decl) = {$, int, void}
+
+        Decl returnDecl;
+
+        if(checkToken(TokenType.INT_TOKEN)){
+            matchToken(TokenType.INT_TOKEN);
+            matchToken(TokenType.IDENT_TOKEN);
+            //returnDecl = parseDecl2();
+        } else if(checkToken(TokenType.VOID_TOKEN)){
+            matchToken(TokenType.VOID_TOKEN);
+            matchToken(TokenType.IDENT_TOKEN);
+            returnDecl = parseFunDecl();
+        } 
+
+        return returnDecl;
+    }
+
+    private Decl parseDecl2(){ }
+    private Decl parseFunDecl(){ }
+    private ArrayList<Param> parseParams(){ }
+    private ArrayList<Param> parseParamList(){ }
+    private Param parseParam(){ }
+    private CompoundStmt parseCompoundStmt(){ }
+    private ArrayList<Statement> parseStatementList(){ }
+    private Statement parseStatement() { }
+    private ExpressionStmt parseExpressionStmt(){ }
+    private SelectionStmt parseSelectionStmt(){ }
+    private IterationStmt parseIterationStmt(){ }
+    private ReturnStmt parseReturnStmt(){ }
+    private Expression parseExpression(){ }
+    private Expression parseExpression2(){ }
+    private Expression parseExpression3(){ }
+    private Expression parseSimpleExpr2(){ }
+    private Expression parseAdditiveExpr(){ }
+    private Expression parseAdditiveExpr2(){ }
+    private Expression parseTerm(){ }
+    private Expression parseTerm2(){ }
+    private Expression parseFactor(){ }
+    private CallExpression parseVarCall(){ }
+    private Expression parseArgs(){ }
+    private ArrayList<Expression> parseArgList(){ }
 
     /* Print AST */
     public void printTree(){
