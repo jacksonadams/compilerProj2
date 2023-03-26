@@ -33,5 +33,11 @@ public class Main {
 
         // Get the output file to print into
         FileWriter outputFile = new FileWriter("scanner/output.txt"); 
+
+        // Create parser
+        CMinusParser myParser = new CMinusParser(myScanner);
+
+        // Close output file
+        outputFile.close();
     }
 }
