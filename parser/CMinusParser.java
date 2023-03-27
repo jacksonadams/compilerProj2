@@ -228,6 +228,7 @@ public class CMinusParser implements Parser {
         if(checkToken(TokenType.INT_TOKEN)){
             matchToken(TokenType.INT_TOKEN);
             matchToken(TokenType.IDENT_TOKEN);
+            decl = parseDecl2();
             //returnDecl = parseDecl2();
         } else if(checkToken(TokenType.VOID_TOKEN)){
             matchToken(TokenType.VOID_TOKEN);
