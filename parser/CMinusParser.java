@@ -328,7 +328,7 @@ public class CMinusParser implements Parser {
         // first(decl) = {void, int}
         // follow(decl) = {$, int, void}
 
-        Decl returnDecl;
+        Decl decl = null;
 
         if(checkToken(TokenType.INT_TOKEN)){
             matchToken(TokenType.INT_TOKEN);
@@ -337,36 +337,271 @@ public class CMinusParser implements Parser {
         } else if(checkToken(TokenType.VOID_TOKEN)){
             matchToken(TokenType.VOID_TOKEN);
             matchToken(TokenType.IDENT_TOKEN);
-            returnDecl = parseFunDecl();
+            decl = parseFunDecl();
         } 
 
-        return returnDecl;
+        return decl;
     }
 
-    private Decl parseDecl2(){ }
-    private Decl parseFunDecl(){ }
-    private ArrayList<Param> parseParams(){ }
-    private ArrayList<Param> parseParamList(){ }
-    private Param parseParam(){ }
-    private CompoundStmt parseCompoundStmt(){ }
-    private ArrayList<Statement> parseStatementList(){ }
-    private Statement parseStatement() { }
-    private ExpressionStmt parseExpressionStmt(){ }
-    private SelectionStmt parseSelectionStmt(){ }
-    private IterationStmt parseIterationStmt(){ }
-    private ReturnStmt parseReturnStmt(){ }
-    private Expression parseExpression(){ }
-    private Expression parseExpression2(){ }
-    private Expression parseExpression3(){ }
-    private Expression parseSimpleExpr2(){ }
-    private Expression parseAdditiveExpr(){ }
-    private Expression parseAdditiveExpr2(){ }
-    private Expression parseTerm(){ }
-    private Expression parseTerm2(){ }
-    private Expression parseFactor(){ }
-    private CallExpression parseVarCall(){ }
-    private Expression parseArgs(){ }
-    private ArrayList<Expression> parseArgList(){ }
+    private Decl parseDecl2(){
+        /* decl' → ; | [NUM] | fun-decl
+         * First(decl') → { ;, [, ( }
+         * Follow(decl') → { $, void, int }
+         */ 
+        Decl decl2 = null;
+
+        return decl2;
+    }
+
+    private Decl parseVarDecl(){ 
+        /* var-decl → ; | [NUM]
+         * First(var-decl) → { ;, [ }
+         * Follow(var-decl) → { int, “}”, ;, ID, NUM, (, *, /, +, -, ;, {, if, while, return }
+         */
+        Decl varDecl = null;
+        
+        return varDecl;
+    }
+
+    private Decl parseFunDecl(){ 
+        /* fun-decl → “(” params-list “)” compound-stmt
+         * First(fun-decl) → { ( }
+         * Follow(fun-decl) → { $, void, int, }
+         */
+        Decl funDecl = null;
+        
+        return funDecl;
+    }
+    
+    private ArrayList<Param> parseParams(){ 
+        /* params → param-list | void
+         * First(params) → { int, void }
+         * Follow(params) → { ) }
+         */
+        ArrayList<Param> params = null;
+
+        return params;
+    }
+
+    private ArrayList<Param> parseParamList(){ 
+        /* param-list → param {, param}
+         * First(params-list) → { int }
+         * Follow(param-list) → { ) }
+         */
+        ArrayList<Param> paramList = null;
+
+        return paramList;
+    }
+
+    private Param parseParam(){ 
+        /* param → int ID [“[“ “]”]
+         * First(param) → { int }
+         * Follow(param) → { “,”, ) }
+         */
+        Param param = null;
+
+        return param;
+    }
+
+    private CompoundStmt parseCompoundStmt(){ 
+        /* compound-stmt → “{“ local-declarations statement-list “}”
+         * First(compound-stmt) → { { }
+         * Follow(compound-stmt) → { $, void, int, “}”, ID, NUM, (, *, /, +, -, ;, {, if, while, return, else }
+         */
+        CompoundStmt CS = null;
+
+        return CS;
+    }
+
+    private ArrayList<Decl> parseLocalDeclarations(){ 
+        /* local-declarations → {int ID var-decl}
+         * First(local-declarations) → { ε, int }
+         * Follow(local-declarations) → { “}”, ID, NUM, (, *, /, +, -, ;, {, if, while, return }
+         */
+        ArrayList<Decl> localDecls = null;
+
+        return localDecls;
+    }
+    
+    private ArrayList<Statement> parseStatementList(){ 
+        /* statement-list → {statement}
+         * First(statement-list) → { ε. ID, NUM, (, *, /, +, -, ;, {, if, while, return }
+         * Follow(statement-list) → { “}” }
+         */
+        ArrayList<Statement> SL = null;
+
+        return SL;
+    }
+    
+    private Statement parseStatement() { 
+        /* statement → expression-stmt | compound-stmt | selection-stmt | iteration-stmt | return-stmt
+         * First(statement) → { ID, NUM, (, ε, *, /, +, -, ;, {, if, while, return }
+         * Follow(statement) → { }, ID, NUM, (, *, /, ;, {, if, while, return, else }
+         */
+        Statement S = null;
+
+        return S;
+    }
+    
+    private ExpressionStmt parseExpressionStmt(){ 
+        /* expression-stmt → [expression] ;
+         * First(expression-stmt) → { ID, NUM, (, ε, *, /, +, -, ; }
+         * Follow(expression-stmt) → { }, ID, NUM, (, *, /, ;, {, if, while, return, else }
+         */
+        ExpressionStmt ES = null;
+
+        return ES;
+    }
+    
+    private SelectionStmt parseSelectionStmt(){ 
+        /* selection-stmt → if “(“ expression “)” statement [else statement]
+         * First(selection-stmt) → { if }
+         * Follow(selection-stmt) → { }, ID, NUM, (, *, /, ;, {, if, while, return, else }
+         */
+        SelectionStmt SS = null;
+
+        return SS;
+    }
+    
+    private IterationStmt parseIterationStmt(){ 
+        /* iteration-stmt → while “(” expression “)” statement
+         * First(iteration-stmt) → { while }
+         * Follow(iteration-stmt) → { }, ID, NUM, (, *, /, ;, {, if, while, return, else }
+         */
+        IterationStmt IS = null;
+
+        return IS;
+    }
+    
+    private ReturnStmt parseReturnStmt(){ 
+        /* return-stmt → return [expression] ;
+         * First(return-stmt) → { return }
+         * Follow(return-stmt) → { }, ID, NUM, (, *, /, ;, {, if, while, return, else }
+         */
+        ReturnStmt RS = null;
+
+        return RS;
+    }
+    
+    private Expression parseExpression(){ 
+        /* expression → ID expression’ | NUM simple-expression’ | (expression) simple-expression’
+         * First(expression) → { ID, NUM, (, ε, *, /, +, - }
+         * Follow(expression) → { ;, ), ], “,”, *, /, +, - }
+         */
+        Expression E = null;
+
+        return E;
+    }
+    
+    private Expression parseExpression2(){ 
+        /* expression’ → = expression | [expression] expression’’ | (args) simple-expression’ | simple-expression’
+         * First(expression’) → { =, ID, NUM, (, ε, *, /, +, - }
+         * Follow(expression’) → { ;, ), ], “,”, *, /, +, - }
+         */
+        Expression E2 = null;
+
+        return E2;
+    }
+    
+    private Expression parseExpression3(){ 
+        /* expression’’ → = expression | simple-expression’
+         * First(expression’’) → { ID, NUM, (, ε, *, /, +, - }
+         * Follow(expression’’) → { ;, ), ], “,”, *, /, +, - }
+         */
+        Expression E3 = null;
+
+        return E3;
+    }
+    
+    private Expression parseSimpleExpr2(){ 
+        /* simple-expression’ → additive-expression’ [relop additive expression]
+         * First(simple-expression’) → { ε, *, /, +, - }
+         * Follow(simple-expression’) → { ;, ), ], “,”, *, /, +, - }
+         */
+        Expression SE2 = null;
+
+        return SE2;
+    }
+    
+    private Expression parseAdditiveExpr(){ 
+        /* additive-expression → term {addop term}
+         * First(additive-expression) → { (, ID, NUM }
+         * Follow(additive-expression) → { ;, ), ], “,”, *, /, +, - }
+         */
+        Expression AE = null;
+
+        return AE;
+    }
+    
+    private Expression parseAdditiveExpr2(){ 
+        /* additive-expression’ → term’ {addop term}
+         * First(additive-expression’) → { ε, *, /, +, - }
+         * Follow(additive-expression’) → { <, >, =, !, ;, ), ], “,”, *, /, +, - }
+         */
+        Expression AE2 = null;
+
+        return AE2;
+    }
+    
+    private Expression parseTerm(){ 
+        /* term → factor {mulop factor}
+         * First(term) → { (, ID, NUM }
+         * Follow(term) → { +, -, <, >, =, !, ;, ), ], “,”, *, /, +, - }
+         */
+        Expression T = null;
+
+        return T;
+    }
+    
+    private Expression parseTerm2(){ 
+        /* term’ → {mulop factor}
+         * First(term’) → { ε. *, / }
+         * Follow(term’) → { +, - }
+         */
+        Expression T2 = null;
+
+        return T2;
+    }
+    
+    private Expression parseFactor(){ 
+        /* factor → “(” expression “)” | ID varcall | NUM
+         * First(factor) → { (, ID, NUM }
+         * Follow(factor) → { *, /, +, -, <, >, =, !, ;, ), ], “,”, *, /, +, - }
+         */
+        Expression F = null;
+
+        return F;
+    }
+    
+    private CallExpression parseVarCall(){ 
+        /* varcall → “(“ args “)” | “[“ expression “]” | ε
+         * First(varcall) → { (, [, ε }
+         * Follow(varcall) → { *, /, +, -, <, >, =, !, ;, ), ], “,”, *, /, +, - }
+         */
+        CallExpression varcall = null;
+
+        return varcall;
+    }
+    
+    private Expression parseArgs(){ 
+        /* args → arg-list | ε
+         * First(args) → { ID, NUM, (, ε, *, / }
+         * Follow(args) → { ) }
+         */
+        Expression args = null;
+
+        return args;
+    }
+    
+    private ArrayList<Expression> parseArgList(){ 
+        /* arg-list → expression {, expression}
+         * First(arg-list) → { ID, NUM, (, ε, *, / }
+         * Follow(arg-list) → { ) }
+         */
+        ArrayList<Expression> argList = null;
+
+        return argList;
+    }
 
     /* Print AST */
     public void printTree(){
