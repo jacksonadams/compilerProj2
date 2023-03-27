@@ -202,11 +202,21 @@ public class CMinusParser implements Parser {
     }
     public class ExpressionStmt extends Statement { 
         // example: a = 3;
+        // ast:
+        // =
+        //  a
+        //  3
+        VarExpression LHS;
+        Expression RHS;
         public ExpressionStmt (VarExpression LHS, Expression RHS){
-            
+            this.LHS = LHS;
+            this.RHS = RHS;
         }
 
-        void print(String parentSpace){}
+        void print(String parentSpace){
+            String mySpace = parentSpace + "  ";
+            System.out.println(mySpace + "")
+        }
     }
     public class CompoundStmt extends Statement { 
         // a sequence of other statements inside { }
