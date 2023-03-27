@@ -3,6 +3,8 @@ package parser;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.security.auth.x500.X500Principal;
+
 import scanner.CMinusScanner;
 import scanner.Token.TokenType;
 
@@ -66,6 +68,34 @@ public class CMinusParser implements Parser {
         1. matchToken() - check and advance
         2. advanceToken() - just advance
         3. checkToken() - just check
+
+        What should AST look like?
+
+        Program {
+            =
+                int x
+                10
+            
+            =  
+                int y
+                20
+
+            int z
+
+            int myFunction {
+                Params {
+                    int x1
+                    int x2
+                }
+                =
+                    int sum
+                    +
+                        x1
+                        x2
+                return
+                    sum
+            }
+        }
      */
 
     /* Constructor */
@@ -93,105 +123,180 @@ public class CMinusParser implements Parser {
     
     /* 17 classes */
     public class Program {
-        public Program(List<Decl> declList) {
-
+        public List<Decl> decls;
+        public Program(List<Decl> decls) {
+            this.decls = decls;
         }
 
-        public void print (String parentSpace) {
-            String mySpace = parentSpace + "    ";
+        void print () {
+            System.out.println("Program {");
+            for(int i = 0; i < decls.size(); i ++){
+                decls.get(i).print("");
+            }
+            System.out.println("}");
         }
     }
     public class Param { 
         // example: int x
-        public Param (VarExpression paramName){
+        public VarExpression name;
+        public Param (VarExpression name){
+            this.name = name;
+        }
 
+        void print(String parentSpace){
+            String mySpace = parentSpace + "  ";
+            System.out.println(mySpace + "int " + name);
         }
     }
-    public class Decl { 
-        // abstract, will be either varDecl or funDecl
+    abstract class Decl {
+        // abstract, will be one of the other two decls
+        abstract void print(String parentSpace);
     }
-    public class VarDecl { 
+    public class VarDecl extends Decl { 
         // example: int x;
         // or int x = 10;
+
+        public VarExpression LHS;
+        public Expression RHS;
         public VarDecl(VarExpression LHS, Expression RHS){
-            
+            this.LHS = LHS;
+            this.RHS = RHS;
+        }
+
+        void print(String parentSpace){
+            String mySpace = parentSpace + "  ";
+            System.out.println(mySpace + "=");
+            LHS.print(mySpace);
+            RHS.print(mySpace);
         }
     }
-    public class FunDecl { 
+    public class FunDecl extends Decl { 
         // example: int gcd (int x, int y) { }
-        public FunDecl (VarExpression funcName, Param[] params) {
+        // we need return type, function name, params, and compound statement
+        String returnType;
+        VarExpression name;
+        List<Param> params;
+        CompoundStmt content;
 
+        public FunDecl (String returnType, VarExpression name, List<Param> params, CompoundStmt content) {
+            this.returnType = returnType;
+            this.name = name;
+            this.params = params;
+            this.content = content;
+        }
+        void print(String parentSpace){
+            String mySpace = parentSpace + "  ";
+            System.out.println(mySpace + this.returnType);
+            name.print(mySpace);
+            System.out.println(mySpace + "Params {");
+            for(int i = 0; i < params.size(); i ++){
+                params.get(i).print(mySpace);
+            }
+            content.print(mySpace);
+            System.out.println(mySpace + "}");
         }
     }
-    public class Statement { 
+    abstract class Statement {
         // abstract, will be one of the other 5 statements
+        abstract void print(String parentSpace);
     }
-    public class ExpressionStmt { 
+    public class ExpressionStmt extends Statement { 
         // example: a = 3;
+        // ast:
+        // =
+        //  a
+        //  3
+        VarExpression LHS;
+        Expression RHS;
         public ExpressionStmt (VarExpression LHS, Expression RHS){
+            this.LHS = LHS;
+            this.RHS = RHS;
+        }
 
+        void print(String parentSpace){
+            String mySpace = parentSpace + "  ";
+            System.out.println(mySpace + "")
         }
     }
-    public class CompoundStmt { 
+    public class CompoundStmt extends Statement { 
         // a sequence of other statements inside { }
         // example: { x = 3; y = y + 3; }
         public CompoundStmt (Statement[] statements){
 
         }
+
+        void print(String parentSpace){}
     }
-    public class SelectionStmt { 
+    public class SelectionStmt extends Statement { 
         // example: if (statement) { } else { }
         public SelectionStmt (Expression condition, CompoundStmt ifSequence, CompoundStmt elseSequence){
 
         }
+
+        void print(String parentSpace){}
     }
-    public class IterationStmt { 
+    public class IterationStmt extends Statement { 
         // example: while (x > 0) { }
         public IterationStmt (Expression condition, CompoundStmt sequence){
 
         }
+
+        void print(String parentSpace){}
     }
-    public class ReturnStmt { 
+    public class ReturnStmt extends Statement { 
         // example: return x;
         // could also be blank: return;
         public ReturnStmt (Expression LHS){
 
         }
+
+        void print(String parentSpace){}
     }
-    public class Expression { 
+
+    abstract class Expression { 
         // abstract expression, will be one of the other 5
+        abstract void print(String parentSpace);
     }
-    public class AssignExpression { 
+    public class AssignExpression extends Expression { 
         // example: x = y, x = 3
         // has to be a var on the left
         public AssignExpression (VarExpression LHS, Expression RHS) {
 
         }
+
+        void print(String parentSpace){}
     }
-    public class BinaryExpression {
+    public class BinaryExpression extends Expression {
         // example: 3 + 4, a + b
         public BinaryExpression (Expression LHS, TokenType op, Expression RHS){
 
         }
+
+        void print(String parentSpace){}
     }
-    public class CallExpression {
+    public class CallExpression extends Expression {
         // example: gcd(3, 4)
         public CallExpression (VarExpression LHS, Expression[] args){
 
         }
+
+        void print(String parentSpace){}
     }
-    public class NumExpression {
+    public class NumExpression extends Expression {
         // example: 3
         public NumExpression (int num){
 
         }
 
+        void print(String parentSpace){}
     }
-    public class VarExpression {
+    public class VarExpression extends Expression {
         // example: x
         public VarExpression (String var){
 
         }
+
+        void print(String parentSpace){}
     }
 
     /* Parse Functions */
