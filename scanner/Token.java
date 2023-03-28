@@ -51,6 +51,10 @@ public class Token {
         return tokenType;
     }
     
+    public Object getData (){
+        return tokenData;
+    }
+    
     public void setData(Object data){
         tokenData = data;
     }

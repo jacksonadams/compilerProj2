@@ -36,6 +36,7 @@ public class Main {
 
         // Create parser
         CMinusParser myParser = new CMinusParser(myScanner);
+        myParser.printTree();
 
         // Close output file
         outputFile.close();

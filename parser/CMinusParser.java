@@ -2,10 +2,12 @@ package parser;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.io.FileWriter;
 
 import javax.security.auth.x500.X500Principal;
 
 import scanner.CMinusScanner;
+import scanner.Token;
 import scanner.Token.TokenType;
 
 public class CMinusParser implements Parser {
@@ -102,6 +104,10 @@ public class CMinusParser implements Parser {
     private CMinusScanner scanner;
     public CMinusParser(CMinusScanner inScanner){
         scanner = inScanner;
+        Program program = parseProgram();
+
+        // For debugging purposes
+        program.print();
     }
 
 
@@ -112,13 +118,17 @@ public class CMinusParser implements Parser {
         }
         return false;
     }
-    public void advanceToken (){
-        scanner.getNextToken();
+    public Token advanceToken (){
+        return scanner.getNextToken();
     }
-    public void matchToken(TokenType token) {
-        if(scanner.getNextToken().getType() != token){
-            // throw error, otherwise do nothing
+    public Token matchToken(TokenType token) {
+        Token nextToken = scanner.getNextToken();
+
+        if(nextToken.getType() != token){
+            // throw error
         }
+
+        return nextToken;
     }
     
     /* 17 classes */
@@ -131,7 +141,9 @@ public class CMinusParser implements Parser {
         void print () {
             System.out.println("Program {");
             for(int i = 0; i < decls.size(); i ++){
-                decls.get(i).print("");
+                if(decls.get(i) != null){
+                    decls.get(i).print("");
+                }
             }
             System.out.println("}");
         }
@@ -162,7 +174,7 @@ public class CMinusParser implements Parser {
             this.LHS = LHS;
             this.RHS = RHS;
         }
-
+            
         void print(String parentSpace){
             String mySpace = parentSpace + "  ";
             System.out.println(mySpace + "=");
@@ -191,7 +203,7 @@ public class CMinusParser implements Parser {
             System.out.println(mySpace + "Params {");
             for(int i = 0; i < params.size(); i ++){
                 params.get(i).print(mySpace);
-            }
+    }
             content.print(mySpace);
             System.out.println(mySpace + "}");
         }
@@ -215,7 +227,7 @@ public class CMinusParser implements Parser {
 
         void print(String parentSpace){
             String mySpace = parentSpace + "  ";
-            System.out.println(mySpace + "")
+            System.out.println(mySpace + "");
         }
     }
     public class CompoundStmt extends Statement { 
@@ -292,8 +304,9 @@ public class CMinusParser implements Parser {
     }
     public class VarExpression extends Expression {
         // example: x
+        String var;
         public VarExpression (String var){
-
+            this.var = var;
         }
 
         void print(String parentSpace){}
@@ -308,6 +321,7 @@ public class CMinusParser implements Parser {
         // Program returnProgram = new Program();
 
         List<Decl> declList = new ArrayList<Decl>();
+        Token temp = scanner.getNextToken();
 
         // check if next token is in first set
         while(checkToken(TokenType.INT_TOKEN) || checkToken(TokenType.VOID_TOKEN)){
@@ -329,17 +343,28 @@ public class CMinusParser implements Parser {
         // follow(decl) = {$, int, void}
 
         Decl decl = null;
-
-        if(checkToken(TokenType.INT_TOKEN)){
-            matchToken(TokenType.INT_TOKEN);
-            matchToken(TokenType.IDENT_TOKEN);
-            decl = parseDecl2();
-            //returnDecl = parseDecl2();
-        } else if(checkToken(TokenType.VOID_TOKEN)){
+        
+        if(checkToken(TokenType.VOID_TOKEN)){
+            Token temp;
+            
             matchToken(TokenType.VOID_TOKEN);
-            matchToken(TokenType.IDENT_TOKEN);
-            decl = parseFunDecl();
-        } 
+            String returnType = "void";
+            
+            temp = matchToken(TokenType.IDENT_TOKEN);
+            VarExpression name = new VarExpression((String)temp.getData());
+
+            //decl = parseFunDecl();
+        } else if(checkToken(TokenType.INT_TOKEN)){
+            Token temp;
+
+            matchToken(TokenType.INT_TOKEN);
+
+            temp = matchToken(TokenType.IDENT_TOKEN);
+            VarExpression name = new VarExpression((String)temp.getData());
+            
+            //Expression RHS = parseDecl2();
+
+        }
 
         return decl;
     }
@@ -350,6 +375,11 @@ public class CMinusParser implements Parser {
          * Follow(decl') → { $, void, int }
          */ 
         Decl decl2 = null;
+
+        if(checkToken(TokenType.SEMI_TOKEN)){
+            matchToken(TokenType.SEMI_TOKEN);
+
+        }
 
         return decl2;
     }
@@ -606,6 +636,6 @@ public class CMinusParser implements Parser {
 
     /* Print AST */
     public void printTree(){
-
+        
     }
 }
