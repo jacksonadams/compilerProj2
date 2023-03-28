@@ -237,21 +237,45 @@ public class CMinusParser implements Parser {
     public class CompoundStmt extends Statement {
         // a sequence of other statements inside { }
         // example: { x = 3; y = y + 3; }
+        ArrayList<Decl> localDecls = new ArrayList<Decl>();
+        ArrayList<Statement> statements = new ArrayList<Statement>();
         public CompoundStmt(ArrayList<Decl> localDecls, ArrayList<Statement> statements) {
-
+            this.localDecls = localDecls;
+            this.statements = statements;
         }
 
         void print(String parentSpace) {
+            String mySpace = parentSpace + "  ";
+            System.out.println(mySpace + "{");
+            for (int i = 0; i < localDecls.size(); i++) {
+                localDecls.get(i).print(mySpace + "  ");
+            }
+            for (int i = 0; i < statements.size(); i++) {
+                statements.get(i).print(mySpace + "  ");
+            }
+            System.out.println(mySpace + "}");
         }
     }
-    
-    public class SelectionStmt extends Statement { 
-        // example: if (statement) { } else { }
-        public SelectionStmt (Expression condition, CompoundStmt ifSequence, CompoundStmt elseSequence){
 
+    public class SelectionStmt extends Statement {
+        // example: if (statement) { } else { }
+        public Expression condition;
+        public Statement ifSequence;
+        public Statement elseSequence;
+
+        public SelectionStmt(Expression condition, Statement ifSequence, Statement elseSequence) {
+            this.condition = condition;
+            this.ifSequence = ifSequence;
+            this.elseSequence = elseSequence;
+        }
+        public SelectionStmt(Expression condition, Statement ifSequence) {
+            this.condition = condition;
+            this.ifSequence = ifSequence;
         }
 
-        void print(String parentSpace){}
+        void print(String parentSpace) {
+
+        }
     }
 
     public class IterationStmt extends Statement { 
