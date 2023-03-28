@@ -1,3 +1,4 @@
-int Test () {
-    int x = 10;
+int Test (int a, int b, int c) {
+    int x;
+    x = 10;
 }

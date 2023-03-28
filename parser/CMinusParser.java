@@ -167,7 +167,7 @@ public class CMinusParser implements Parser {
 
         void print(String parentSpace) {
             String mySpace = parentSpace + "  ";
-            System.out.println(mySpace + "int " + name);
+            this.name.print(mySpace + "int ");
         }
     }
 
@@ -187,7 +187,7 @@ public class CMinusParser implements Parser {
 
         void print(String parentSpace) {
             String mySpace = parentSpace + "  ";
-            this.name.print(mySpace);
+            this.name.print(mySpace + "int ");
         }
     }
 
@@ -208,14 +208,14 @@ public class CMinusParser implements Parser {
 
         void print(String parentSpace) {
             String mySpace = parentSpace + "  ";
-            System.out.println(mySpace + this.returnType);
+            System.out.println(mySpace + "function " + this.returnType);
             name.print(mySpace);
-            System.out.println(mySpace + "Params {");
+            System.out.println(mySpace + "  Params (");
             for (int i = 0; i < params.size(); i++) {
                 params.get(i).print(mySpace);
             }
+            System.out.println(mySpace + "  )");
             content.print(mySpace);
-            System.out.println(mySpace + "}");
         }
     }
 
@@ -225,46 +225,60 @@ public class CMinusParser implements Parser {
     }
 
     public class ExpressionStmt extends Statement {
-        // example: a = 3;
-        // ast:
-        // =
-        // a
-        // 3
-        VarExpression LHS;
-        Expression RHS;
+        // example: a + 3;
 
-        public ExpressionStmt(VarExpression LHS, Expression RHS) {
-            this.LHS = LHS;
-            this.RHS = RHS;
+        public Expression statement;
+        public ExpressionStmt(Expression statement) {
+            this.statement = statement;
         }
 
         void print(String parentSpace) {
             String mySpace = parentSpace + "  ";
-            System.out.println(mySpace + "");
+            this.statement.print(mySpace);
         }
     }
 
     public class CompoundStmt extends Statement {
         // a sequence of other statements inside { }
         // example: { x = 3; y = y + 3; }
+        ArrayList<Decl> localDecls = new ArrayList<Decl>();
+        ArrayList<Statement> statements = new ArrayList<Statement>();
         public CompoundStmt(ArrayList<Decl> localDecls, ArrayList<Statement> statements) {
-
+            this.localDecls = localDecls;
+            this.statements = statements;
         }
 
         void print(String parentSpace) {
+            String mySpace = parentSpace + "  ";
+            System.out.println(mySpace + "{");
+            for (int i = 0; i < localDecls.size(); i++) {
+                localDecls.get(i).print(mySpace + "  ");
+            }
+            for (int i = 0; i < statements.size(); i++) {
+                statements.get(i).print(mySpace + "  ");
+            }
+            System.out.println(mySpace + "}");
         }
     }
 
     public class SelectionStmt extends Statement {
         // example: if (statement) { } else { }
-        public SelectionStmt(Expression condition, Statement ifSequence, Statement elseSequence) {
+        public Expression condition;
+        public Statement ifSequence;
+        public Statement elseSequence;
 
+        public SelectionStmt(Expression condition, Statement ifSequence, Statement elseSequence) {
+            this.condition = condition;
+            this.ifSequence = ifSequence;
+            this.elseSequence = elseSequence;
         }
-        public SelectionStmt(Expression condition, Statement ifSequence, Statement elseSequence) {
-
+        public SelectionStmt(Expression condition, Statement ifSequence) {
+            this.condition = condition;
+            this.ifSequence = ifSequence;
         }
 
         void print(String parentSpace) {
+
         }
     }
 
@@ -297,11 +311,19 @@ public class CMinusParser implements Parser {
     public class AssignExpression extends Expression {
         // example: x = y, x = 3
         // has to be a var on the left
-        public AssignExpression(VarExpression LHS, Expression RHS) {
+        VarExpression LHS;
+        Expression RHS;
 
+        public AssignExpression(VarExpression LHS, Expression RHS) {
+            this.LHS = LHS;
+            this.RHS = RHS;
         }
 
         void print(String parentSpace) {
+            String mySpace = "  " + parentSpace;
+            System.out.println(mySpace + "=");
+            this.LHS.print(mySpace);
+            this.RHS.print(mySpace);
         }
     }
 
@@ -384,6 +406,7 @@ public class CMinusParser implements Parser {
     }
 
     private Decl parseDecl() throws Exception {
+        System.out.println("parsing decl");
         // decl -> void ID fun-decl | int ID decl'
         // first(decl) = {void, int}
         // follow(decl) = {$, int, void}
@@ -430,6 +453,7 @@ public class CMinusParser implements Parser {
     }
 
     private Decl parseDecl2(String returnType, String name) throws Exception {
+        System.out.println("parsing decl2 with return type " + returnType + " and name " + name);
         /*
          * decl' → ; | [NUM] | fun-decl
          * First(decl') → { ;, [, ( }
@@ -461,22 +485,21 @@ public class CMinusParser implements Parser {
          * Follow(var-decl) → { int, “}”, ;, ID, NUM, (, *, /, +, -, ;, {, if, while,
          * return }
          */
-        Decl varDecl = null;
-
         if(checkToken(TokenType.SEMI_TOKEN)){
             matchToken(TokenType.SEMI_TOKEN);
+            return new VarDecl(new VarExpression(name));
         } else if(checkToken(TokenType.LEFT_BRACKET_TOKEN)){
             matchToken(TokenType.LEFT_BRACKET_TOKEN);
             VarExpression varName = new VarExpression(name, (int)scanner.getNextToken().getData());
             matchToken(TokenType.RIGHT_BRACKET_TOKEN);
+            return new VarDecl(varName);
         } else {
             throw new Exception("Syntax error: was expecting ; or [");
         }
-
-        return varDecl;
     }
 
     private Decl parseFunDecl(String type, VarExpression name) throws Exception {
+        System.out.println("Parsing fun decl");
         /*
          * fun-decl → “(” params-list “)” compound-stmt
          * First(fun-decl) → { ( }
@@ -521,6 +544,7 @@ public class CMinusParser implements Parser {
         paramList.add(nextParam);
 
         while(checkToken(TokenType.COMMA_TOKEN)){
+            matchToken(TokenType.COMMA_TOKEN);
             nextParam = parseParam();
             paramList.add(nextParam);
         }
@@ -637,7 +661,8 @@ public class CMinusParser implements Parser {
         return S;
     }
 
-    private ExpressionStmt parseExpressionStmt() {
+    private ExpressionStmt parseExpressionStmt () throws Exception {
+        System.out.println("parsing expression statement");
         /*
          * expression-stmt → [expression] ;
          * First(expression-stmt) → { ID, NUM, (, ε, *, /, +, -, ; }
@@ -646,19 +671,23 @@ public class CMinusParser implements Parser {
          */
         ExpressionStmt ES = null;
 
+        if(checkToken(TokenType.IDENT_TOKEN)){
+            ES = new ExpressionStmt(parseExpression());
+            matchToken(TokenType.SEMI_TOKEN);
+        }
+
         System.out.println("Parsing Expression Stmt");
 
         return ES;
     }
 
-    private SelectionStmt parseSelectionStmt() throws Exception{
+    private SelectionStmt parseSelectionStmt() throws Exception {
         /*
          * selection-stmt → if “(“ expression “)” statement [else statement]
          * First(selection-stmt) → { if }
          * Follow(selection-stmt) → { }, ID, NUM, (, *, /, ;, {, if, while, return, else
          * }
          */
-        SelectionStmt SS = null;
         System.out.println("Parsing Selection Stmt");
 
         matchToken(TokenType.IF_TOKEN);
@@ -671,8 +700,7 @@ public class CMinusParser implements Parser {
             Statement elseSequence = parseStatement();
             return new SelectionStmt(condition, ifSequence, elseSequence);
         }
-
-        return SS;
+        return new SelectionStmt(condition, ifSequence);
     }
 
     private IterationStmt parseIterationStmt() {
@@ -700,7 +728,7 @@ public class CMinusParser implements Parser {
         return RS;
     }
 
-    private Expression parseExpression() {
+    private Expression parseExpression() throws Exception {
         /*
          * expression → ID expression’ | NUM simple-expression’ | (expression)
          * simple-expression’
@@ -710,10 +738,32 @@ public class CMinusParser implements Parser {
         Expression E = null;
         System.out.println("Parsing Expression");
 
+        if(checkToken(TokenType.IDENT_TOKEN)){
+            String ID = (String)scanner.getNextToken().getData();
+            System.out.println(ID);
+            TokenType test = scanner.getNextToken().getType();
+            if(test == TokenType.EQUAL_TOKEN){
+                System.out.println("equals next");
+
+            }
+            E = parseExpression2(ID);
+        } else if (checkToken(TokenType.NUM_TOKEN)){
+            matchToken(TokenType.NUM_TOKEN);
+            E = parseSimpleExpr2();
+        } else if (checkToken(TokenType.LEFT_PAREN_TOKEN)){
+            matchToken(TokenType.LEFT_PAREN_TOKEN);
+            E = parseExpression();
+            matchToken(TokenType.RIGHT_PAREN_TOKEN);
+        } else {
+            throw new Exception("Syntax error: expression expects ID, NUM, or (.");
+        }
+
         return E;
     }
 
-    private Expression parseExpression2() {
+    private Expression parseExpression2(String ID) throws Exception {
+        System.out.println("parsing expression 2");
+
         /*
          * expression’ → = expression | [expression] expression’’ | (args)
          * simple-expression’ | simple-expression’
@@ -722,7 +772,21 @@ public class CMinusParser implements Parser {
          */
         Expression E2 = null;
 
-
+        if(checkToken(TokenType.EQUAL_TOKEN)){
+            System.out.println("found = ");
+            matchToken(TokenType.EQUAL_TOKEN);
+            Expression RHS = parseExpression();
+            return new AssignExpression(new VarExpression(ID), RHS);
+        } else if (checkToken(TokenType.LEFT_BRACKET_TOKEN)){
+            matchToken(TokenType.LEFT_BRACKET_TOKEN);
+            E2 = parseExpression();
+            matchToken(TokenType.RIGHT_BRACKET_TOKEN);
+            E2 = parseExpression();
+        } else if (checkToken(TokenType.LEFT_PAREN_TOKEN)){
+            //matchToken()
+        } else {
+            throw new Exception("Syntax error: expression' expects = [ or (.");
+        }
         System.out.println("Parsing Expression 2");
 
         return E2;
