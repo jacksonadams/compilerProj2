@@ -370,7 +370,7 @@ public class CMinusParser implements Parser {
     }
 
     private Decl parseDecl2(){
-        /* decl' → ; | [NUM] | fun-decl
+        /* decl’ → var-decl | fun-decl
          * First(decl') → { ;, [, ( }
          * Follow(decl') → { $, void, int }
          */ 
@@ -385,7 +385,7 @@ public class CMinusParser implements Parser {
     }
 
     private Decl parseVarDecl(){ 
-        /* var-decl → ; | [NUM]
+        /* var-decl → [ “[“ NUM “]” ] ;
          * First(var-decl) → { ;, [ }
          * Follow(var-decl) → { int, “}”, ;, ID, NUM, (, *, /, +, -, ;, {, if, while, return }
          */
