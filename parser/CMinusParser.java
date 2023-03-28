@@ -168,18 +168,15 @@ public class CMinusParser implements Parser {
         // example: int x;
         // or int x = 10;
 
-        public VarExpression LHS;
-        public Expression RHS;
-        public VarDecl(VarExpression LHS, Expression RHS){
-            this.LHS = LHS;
-            this.RHS = RHS;
+        public VarExpression name;
+        public VarDecl(VarExpression name){
+            this.name = name;
         }
             
         void print(String parentSpace){
             String mySpace = parentSpace + "  ";
             System.out.println(mySpace + "=");
-            LHS.print(mySpace);
-            RHS.print(mySpace);
+            name.print(mySpace);
         }
     }
     public class FunDecl extends Decl { 
@@ -353,23 +350,49 @@ public class CMinusParser implements Parser {
             temp = matchToken(TokenType.IDENT_TOKEN);
             VarExpression name = new VarExpression((String)temp.getData());
 
-            //decl = parseFunDecl();
+            decl = parseFunDecl(returnType, name);
         } else if(checkToken(TokenType.INT_TOKEN)){
             Token temp;
 
             matchToken(TokenType.INT_TOKEN);
+            String returnType = "int";
 
             temp = matchToken(TokenType.IDENT_TOKEN);
             VarExpression name = new VarExpression((String)temp.getData());
             
-            //Expression RHS = parseDecl2();
+            decl = parseDecl2(returnType, name);
 
         }
 
         return decl;
     }
 
-    private Decl parseDecl2(){
+    private Decl parseFunDecl(String returnType, VarExpression name){ 
+        /* fun-decl → “(” params “)” compound-stmt
+         * First(fun-decl) → { ( }
+         * Follow(fun-decl) → { $, void, int, }
+         */
+        Decl funDecl = null;
+
+        matchToken(TokenType.LEFT_PAREN_TOKEN);
+
+        List<Param> paramList = parseParams();
+        Param param;
+        while(!checkToken(TokenType.RIGHT_PAREN_TOKEN)){
+            param = parseParam();
+            paramList.add(param);
+        }
+        
+        matchToken(TokenType.RIGHT_PAREN_TOKEN);
+
+        CompoundStmt CS = parseCompoundStmt();
+
+        funDecl = new FunDecl(returnType, name, paramList, CS);
+
+        return funDecl;
+    }
+
+    private Decl parseDecl2(String returnType, VarExpression name){
         /* decl’ → var-decl | fun-decl
          * First(decl') → { ;, [, ( }
          * Follow(decl') → { $, void, int }
@@ -378,7 +401,13 @@ public class CMinusParser implements Parser {
 
         if(checkToken(TokenType.SEMI_TOKEN)){
             matchToken(TokenType.SEMI_TOKEN);
+            decl2 = new VarDecl(name);
+        }
+        else if(checkToken(TokenType.LEFT_BRACKET_TOKEN)){
 
+        }
+        else if(checkToken(TokenType.LEFT_PAREN_TOKEN)){
+            decl2 = parseFunDecl(returnType, name);
         }
 
         return decl2;
@@ -393,16 +422,6 @@ public class CMinusParser implements Parser {
         
         return varDecl;
     }
-
-    private Decl parseFunDecl(){ 
-        /* fun-decl → “(” params-list “)” compound-stmt
-         * First(fun-decl) → { ( }
-         * Follow(fun-decl) → { $, void, int, }
-         */
-        Decl funDecl = null;
-        
-        return funDecl;
-    }
     
     private ArrayList<Param> parseParams(){ 
         /* params → param-list | void
@@ -410,6 +429,13 @@ public class CMinusParser implements Parser {
          * Follow(params) → { ) }
          */
         ArrayList<Param> params = null;
+
+        if(checkToken(TokenType.INT_TOKEN)){
+            params = parseParamList();
+        }
+        else if(checkToken(TokenType.VOID_TOKEN)){
+            matchToken(TokenType.VOID_TOKEN);
+        }
 
         return params;
     }
@@ -419,7 +445,16 @@ public class CMinusParser implements Parser {
          * First(params-list) → { int }
          * Follow(param-list) → { ) }
          */
-        ArrayList<Param> paramList = null;
+        ArrayList<Param> paramList = new ArrayList<Param>();
+
+        Param param = parseParam();
+        paramList.add(param);
+
+        while(checkToken(TokenType.COMMA_TOKEN)){
+            matchToken(TokenType.COMMA_TOKEN);
+            param = parseParam();
+            paramList.add(param);
+        }
 
         return paramList;
     }
