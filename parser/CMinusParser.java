@@ -214,23 +214,18 @@ public class CMinusParser implements Parser {
         // abstract, will be one of the other 5 statements
         abstract void print(String parentSpace);
     }
-    
-    public class ExpressionStmt extends Statement { 
-        // example: a = 3;
-        // ast:
-        // =
-        //  a
-        //  3
-        VarExpression LHS;
-        Expression RHS;
-        public ExpressionStmt (VarExpression LHS, Expression RHS){
-            this.LHS = LHS;
-            this.RHS = RHS;
+
+    public class ExpressionStmt extends Statement {
+        // example: a + 3;
+
+        public Expression statement;
+        public ExpressionStmt(Expression statement) {
+            this.statement = statement;
         }
 
-        void print(String parentSpace){
+        void print(String parentSpace) {
             String mySpace = parentSpace + "  ";
-            System.out.println(mySpace + "");
+            this.statement.print(mySpace);
         }
     }
 
@@ -473,12 +468,30 @@ public class CMinusParser implements Parser {
         return decl2;
     }
 
-    private Decl parseVarDecl(){ 
+    private Decl parseVarDecl(String name){ 
         /* var-decl → [ “[“ NUM “]” ] ;
          * First(var-decl) → { ;, [ }
          * Follow(var-decl) → { int, “}”, ;, ID, NUM, (, *, /, +, -, ;, {, if, while, return }
          */
         Decl varDecl = null;
+        Token temp;
+
+        if(checkToken(TokenType.LEFT_BRACKET_TOKEN)){
+            matchToken(TokenType.LEFT_BRACKET_TOKEN);
+
+            temp = matchToken(TokenType.NUM_TOKEN);
+            int value = (int)temp.getData();
+            VarExpression var = new VarExpression(name, value);
+            varDecl = new VarDecl(var);
+
+            matchToken(TokenType.RIGHT_BRACKET_TOKEN);
+        } 
+        else{
+            VarExpression var = new VarExpression(name);
+            varDecl = new VarDecl(var);
+        }
+
+        matchToken(TokenType.SEMI_TOKEN);
         
         return varDecl;
     }
@@ -555,45 +568,97 @@ public class CMinusParser implements Parser {
          */
         CompoundStmt CS = null;
 
+        matchToken(TokenType.LEFT_BRACE_TOKEN);
+
+        ArrayList<Decl> localDecls = parseLocalDecls();
+        ArrayList<Statement> stmtList = parseStmtList();
+
         return CS;
     }
 
-    private ArrayList<Decl> parseLocalDeclarations(){ 
+    private ArrayList<Decl> parseLocalDecls(){ 
         /* local-declarations → {int ID var-decl}
          * First(local-declarations) → { ε, int }
-         * Follow(local-declarations) → { “}”, ID, NUM, (, *, /, +, -, ;, {, if, while, return }
+         * Follow(local-declarations) → { “}”, ID, NUM, (, ;, {, if, while, return }
          */
-        ArrayList<Decl> localDecls = null;
+        ArrayList<Decl> localDecls = new ArrayList<Decl>();
+        Token temp;
+
+        while(checkToken(TokenType.INT_TOKEN)){
+            matchToken(TokenType.INT_TOKEN);
+
+            temp = matchToken(TokenType.IDENT_TOKEN);
+            String name = (String)temp.getData();
+            Decl decl = parseVarDecl(name);
+            localDecls.add(decl);
+        }
 
         return localDecls;
     }
     
-    private ArrayList<Statement> parseStatementList(){ 
+    private ArrayList<Statement> parseStmtList(){ 
         /* statement-list → {statement}
-         * First(statement-list) → { ε. ID, NUM, (, *, /, +, -, ;, {, if, while, return }
+         * First(statement-list) → { ε. ID, NUM, (, ;, {, if, while, return }
          * Follow(statement-list) → { “}” }
          */
-        ArrayList<Statement> SL = null;
+        ArrayList<Statement> SL = new ArrayList<Statement>();
+
+        while(checkToken(TokenType.IDENT_TOKEN)
+        || checkToken(TokenType.NUM_TOKEN)
+        || checkToken(TokenType.LEFT_PAREN_TOKEN)
+        || checkToken(TokenType.SEMI_TOKEN)
+        || checkToken(TokenType.IF_TOKEN)
+        || checkToken(TokenType.WHILE_TOKEN)
+        || checkToken(TokenType.RETURN_TOKEN)){
+            Statement S = parseStatement();
+            SL.add(S);
+        }
 
         return SL;
     }
     
     private Statement parseStatement() { 
         /* statement → expression-stmt | compound-stmt | selection-stmt | iteration-stmt | return-stmt
-         * First(statement) → { ID, NUM, (, ε, *, /, +, -, ;, {, if, while, return }
-         * Follow(statement) → { }, ID, NUM, (, *, /, ;, {, if, while, return, else }
+         * First(statement) → { ID, NUM, (, ;, {, if, while, return }
+         * Follow(statement) → { }, ID, NUM, (, ;, {, if, while, return, else }
          */
         Statement S = null;
+
+        if(checkToken(TokenType.IDENT_TOKEN)
+        || checkToken(TokenType.NUM_TOKEN)
+        || checkToken(TokenType.LEFT_PAREN_TOKEN)
+        || checkToken(TokenType.SEMI_TOKEN)){
+            S = parseExpressionStmt();
+        }
+        else if(checkToken(TokenType.LEFT_BRACE_TOKEN)){
+            S = parseCompoundStmt();
+        }
+        else if(checkToken(TokenType.IF_TOKEN)){
+            S = parseSelectionStmt();
+        }
+        else if(checkToken(TokenType.WHILE_TOKEN)){
+            S = parseIterationStmt();
+        }
+        else if(checkToken(TokenType.RETURN_TOKEN)){
+            S = parseReturnStmt();
+        }
 
         return S;
     }
     
     private ExpressionStmt parseExpressionStmt(){ 
         /* expression-stmt → [expression] ;
-         * First(expression-stmt) → { ID, NUM, (, ε, *, /, +, -, ; }
-         * Follow(expression-stmt) → { }, ID, NUM, (, *, /, ;, {, if, while, return, else }
+         * First(expression-stmt) → { ID, NUM, (, ; }
+         * Follow(expression-stmt) → { }, ID, NUM, (, ;, {, if, while, return, else }
          */
         ExpressionStmt ES = null;
+
+        if(!checkToken(TokenType.SEMI_TOKEN)){
+            Expression E = parseExpression();
+            ES = new ExpressionStmt(E);
+        }
+
+        matchToken(TokenType.SEMI_TOKEN);
 
         return ES;
     }
@@ -601,7 +666,7 @@ public class CMinusParser implements Parser {
     private SelectionStmt parseSelectionStmt(){ 
         /* selection-stmt → if “(“ expression “)” statement [else statement]
          * First(selection-stmt) → { if }
-         * Follow(selection-stmt) → { }, ID, NUM, (, *, /, ;, {, if, while, return, else }
+         * Follow(selection-stmt) → { }, ID, NUM, (, {, if, while, return, else }
          */
         SelectionStmt SS = null;
 
@@ -611,7 +676,7 @@ public class CMinusParser implements Parser {
     private IterationStmt parseIterationStmt(){ 
         /* iteration-stmt → while “(” expression “)” statement
          * First(iteration-stmt) → { while }
-         * Follow(iteration-stmt) → { }, ID, NUM, (, *, /, ;, {, if, while, return, else }
+         * Follow(iteration-stmt) → { }, ID, NUM, (, {, if, while, return, else }
          */
         IterationStmt IS = null;
 
@@ -621,7 +686,7 @@ public class CMinusParser implements Parser {
     private ReturnStmt parseReturnStmt(){ 
         /* return-stmt → return [expression] ;
          * First(return-stmt) → { return }
-         * Follow(return-stmt) → { }, ID, NUM, (, *, /, ;, {, if, while, return, else }
+         * Follow(return-stmt) → { }, ID, NUM, (, ;, {, if, while, return, else }
          */
         ReturnStmt RS = null;
 
@@ -630,28 +695,46 @@ public class CMinusParser implements Parser {
     
     private Expression parseExpression(){ 
         /* expression → ID expression’ | NUM simple-expression’ | (expression) simple-expression’
-         * First(expression) → { ID, NUM, (, ε, *, /, +, - }
-         * Follow(expression) → { ;, ), ], “,”, *, /, +, - }
+         * First(expression) → { ID, NUM, ( }
+         * Follow(expression) → { ;, ), ], “,” }
          */
         Expression E = null;
+        Token temp;
+
+        if(checkToken(TokenType.IDENT_TOKEN)){
+            temp = matchToken(TokenType.IDENT_TOKEN);
+            String name = (String)temp.getData();
+
+            E = parseExpression2(name);
+        }
+        else if(checkToken(TokenType.NUM_TOKEN)){
+
+        }
+        else if(checkToken(TokenType.LEFT_PAREN_TOKEN)){
+
+        }
 
         return E;
     }
     
-    private Expression parseExpression2(){ 
+    private Expression parseExpression2(String name){ 
         /* expression’ → = expression | [expression] expression’’ | (args) simple-expression’ | simple-expression’
-         * First(expression’) → { =, ID, NUM, (, ε, *, /, +, - }
-         * Follow(expression’) → { ;, ), ], “,”, *, /, +, - }
+         * First(expression’) → { =, ID, NUM, ( }
+         * Follow(expression’) → { ;, ), ], “,” }
          */
         Expression E2 = null;
+
+        if(checkToken(TokenType.EQUAL_TOKEN)){
+            
+        }
 
         return E2;
     }
     
     private Expression parseExpression3(){ 
         /* expression’’ → = expression | simple-expression’
-         * First(expression’’) → { ID, NUM, (, ε, *, /, +, - }
-         * Follow(expression’’) → { ;, ), ], “,”, *, /, +, - }
+         * First(expression’’) → { ID, NUM, ( }
+         * Follow(expression’’) → { ;, ), ], “,” }
          */
         Expression E3 = null;
 
@@ -661,7 +744,7 @@ public class CMinusParser implements Parser {
     private Expression parseSimpleExpr2(){ 
         /* simple-expression’ → additive-expression’ [relop additive expression]
          * First(simple-expression’) → { ε, *, /, +, - }
-         * Follow(simple-expression’) → { ;, ), ], “,”, *, /, +, - }
+         * Follow(simple-expression’) → { ;, ), ], “,” }
          */
         Expression SE2 = null;
 
@@ -671,7 +754,7 @@ public class CMinusParser implements Parser {
     private Expression parseAdditiveExpr(){ 
         /* additive-expression → term {addop term}
          * First(additive-expression) → { (, ID, NUM }
-         * Follow(additive-expression) → { ;, ), ], “,”, *, /, +, - }
+         * Follow(additive-expression) → { ;, ), ], “,” }
          */
         Expression AE = null;
 
@@ -681,7 +764,7 @@ public class CMinusParser implements Parser {
     private Expression parseAdditiveExpr2(){ 
         /* additive-expression’ → term’ {addop term}
          * First(additive-expression’) → { ε, *, /, +, - }
-         * Follow(additive-expression’) → { <, >, =, !, ;, ), ], “,”, *, /, +, - }
+         * Follow(additive-expression’) → { <, >, =, !, ;, ), ], “,” }
          */
         Expression AE2 = null;
 
