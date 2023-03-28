@@ -1,6 +1,7 @@
 package parser;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.io.FileWriter;
 
@@ -103,10 +104,28 @@ public class CMinusParser implements Parser {
     /* Constructor */
     private CMinusScanner scanner;
     public Program program;
+    public HashMap<TokenType, String> ops = new HashMap<TokenType, String>();
 
     public CMinusParser(CMinusScanner inScanner) throws Exception{
         scanner = inScanner;
         program = parseProgram();
+
+
+    // Create a HashMap object called people
+        HashMap<String, Integer> people = new HashMap<String, Integer>();
+
+
+        // Add keys and values (Name, Age)
+        ops.put(TokenType.PLUS_TOKEN, "+");
+        ops.put(TokenType.MINUS_TOKEN, "-");
+        ops.put(TokenType.MULT_TOKEN, "*");
+        ops.put(TokenType.DIVIDE_TOKEN, "/");
+        ops.put(TokenType.NOT_EQUAL_TOKEN, "!=");
+        ops.put(TokenType.EQUAL_TOKEN, "==");
+        ops.put(TokenType.GREATER_EQUAL_TOKEN, ">=");
+        ops.put(TokenType.GREATER_TOKEN, ">");
+        ops.put(TokenType.LESS_EQUAL_TOKEN, "<=");
+        ops.put(TokenType.LESS_TOKEN, "<");
 
         // For debugging purposes
         // program.print();
@@ -115,15 +134,6 @@ public class CMinusParser implements Parser {
     /* Helper functions */
     public Boolean checkToken(TokenType token) {
         return (scanner.viewNextToken().getType() == token);
-    }
-
-    public Boolean checkTokens(TokenType[] tokens){
-        for(int i = 0; i < tokens.length; i ++){
-            if(scanner.viewNextToken().getType() == tokens[i]){
-                return true;
-            }
-        }
-        return false;
     }
 
     public Token advanceToken() {
@@ -287,7 +297,15 @@ public class CMinusParser implements Parser {
         }
 
         void print(String parentSpace) {
-
+            String mySpace = "  " + parentSpace;
+            System.out.println(mySpace + "if (");
+            this.condition.print(mySpace);
+            System.out.println(mySpace + ")");
+            this.ifSequence.print(mySpace);
+            if(this.elseSequence != null){
+                System.out.println(mySpace + "else");
+                this.elseSequence.print(mySpace);
+            }
         }
     }
 
@@ -305,6 +323,7 @@ public class CMinusParser implements Parser {
         // example: return x;
         // could also be blank: return;
         Expression LHS;
+        public ReturnStmt() { }
         public ReturnStmt(Expression LHS) {
             this.LHS = LHS;
         }
@@ -312,7 +331,9 @@ public class CMinusParser implements Parser {
         void print(String parentSpace) {
             String mySpace = parentSpace + "  ";
             System.out.println(mySpace + "return");
-            this.LHS.print(mySpace);
+            if(this.LHS != null) {
+                this.LHS.print(mySpace);
+            }
         }
     }
 
@@ -354,7 +375,9 @@ public class CMinusParser implements Parser {
 
         void print(String parentSpace) {
             String mySpace = parentSpace + "  ";
-            //System.out.println
+            System.out.println(mySpace + ops.get(this.op));
+            this.LHS.print(mySpace);
+            this.RHS.print(mySpace);
         }
     }
 
@@ -371,11 +394,11 @@ public class CMinusParser implements Parser {
         void print(String parentSpace) {
             String mySpace = "  " + parentSpace;
             this.LHS.print(mySpace);
-            System.out.println("(");
+            System.out.println(mySpace + "(");
             for (int i = 0; i < args.size(); i++) {
                 args.get(i).print(mySpace + "  ");
             }
-            System.out.println(")");
+            System.out.println(mySpace + ")");
         }
     }
 
@@ -703,7 +726,7 @@ public class CMinusParser implements Parser {
          */
         ExpressionStmt ES = null;
 
-        if(checkToken(TokenType.IDENT_TOKEN)){
+        if(checkToken(TokenType.IDENT_TOKEN) || checkToken(TokenType.NUM_TOKEN) || checkToken(TokenType.LEFT_PAREN_TOKEN)){
             ES = new ExpressionStmt(parseExpression());
             matchToken(TokenType.SEMI_TOKEN);
         }
@@ -748,15 +771,21 @@ public class CMinusParser implements Parser {
         return IS;
     }
 
-    private ReturnStmt parseReturnStmt() {
+    private ReturnStmt parseReturnStmt() throws Exception {
         /*
          * return-stmt → return [expression] ;
          * First(return-stmt) → { return }
          * Follow(return-stmt) → { }, ID, NUM, (, *, /, ;, {, if, while, return, else }
          */
+
         ReturnStmt RS = null;
 
-        System.out.println("Parsing Return Stmt");
+        matchToken(TokenType.RETURN_TOKEN);
+        if(checkToken(TokenType.IDENT_TOKEN) || checkToken(TokenType.NUM_TOKEN) || checkToken(TokenType.LEFT_PAREN_TOKEN)){
+            RS = new ReturnStmt(parseExpression());
+        }
+        matchToken(TokenType.SEMI_TOKEN);
+
         return RS;
     }
 
@@ -772,13 +801,11 @@ public class CMinusParser implements Parser {
 
         if(checkToken(TokenType.IDENT_TOKEN)){
             String ID = (String)scanner.getNextToken().getData();
+            System.out.println("parsing ); from Expression");
             E = parseExpression2(ID);
-            if(E == null){
-                return new VarExpression(ID);
-            }
         } else if (checkToken(TokenType.NUM_TOKEN)){
             int num = (int)scanner.getNextToken().getData();
-            E = parseSimpleExpr2();
+            E = parseSimpleExpr2(new NumExpression(num));
             if(E == null){
                 return new NumExpression(num);
             }
@@ -814,16 +841,15 @@ public class CMinusParser implements Parser {
             matchToken(TokenType.RIGHT_BRACKET_TOKEN);
             E2 = parseExpression();
         } else if (checkToken(TokenType.LEFT_PAREN_TOKEN)){
-            //matchToken()
-        } else if (checkToken(TokenType.MULT_TOKEN) || checkToken(TokenType.DIVIDE_TOKEN) || checkToken(TokenType.PLUS_TOKEN) || checkToken(TokenType.MINUS_TOKEN)){
-            // simple-expr'
-            E2 = parseSimpleExpr2();
-        } else if (checkToken(TokenType.SEMI_TOKEN)){
-            return null;
+            E2 = parseVarCall(new VarExpression(ID));
+        } else if (checkToken(TokenType.MULT_TOKEN) || checkToken(TokenType.DIVIDE_TOKEN) || checkToken(TokenType.PLUS_TOKEN) || checkToken(TokenType.MINUS_TOKEN) || checkToken(TokenType.LESS_EQUAL_TOKEN) || checkToken(TokenType.LESS_TOKEN) || checkToken(TokenType.GREATER_TOKEN) || checkToken(TokenType.GREATER_EQUAL_TOKEN) || checkToken(TokenType.EQUAL_TOKEN) || checkToken(TokenType.NOT_EQUAL_TOKEN) || checkToken(TokenType.IDENT_TOKEN) || checkToken(TokenType.NUM_TOKEN)){
+            E2 = parseSimpleExpr2(new VarExpression(ID));
+        }
+        else if (checkToken(TokenType.SEMI_TOKEN) || checkToken(TokenType.RIGHT_PAREN_TOKEN) || checkToken(TokenType.COMMA_TOKEN)){
+            return new VarExpression(ID);
         } else {
             throw new Exception("Syntax error: expression' expects = [ or (.");
         }
-        System.out.println("Parsing Expression 2");
 
         return E2;
     }
@@ -842,19 +868,19 @@ public class CMinusParser implements Parser {
         return E3;
     }
 
-    private Expression parseSimpleExpr2() throws Exception {
+    private Expression parseSimpleExpr2(Expression LHS) throws Exception {
         /*
          * simple-expression’ → additive-expression’ [relop additive expression]
          * First(simple-expression’) → { ε, *, /, +, - }
          * Follow(simple-expression’) → { ;, ), ], “,”, *, /, +, - }
          */
-        Expression SE2 = null;
+        Expression SE2 = LHS;
 
         if(checkToken(TokenType.MULT_TOKEN) || checkToken(TokenType.DIVIDE_TOKEN) || checkToken(TokenType.PLUS_TOKEN) || checkToken(TokenType.MINUS_TOKEN)){
-            SE2 = parseAdditiveExpr2();
+            SE2 = parseAdditiveExpr2(LHS);
         }
 
-        if(checkToken(TokenType.GREATER_EQUAL_TOKEN) || checkToken(TokenType.GREATER_TOKEN) || checkToken(TokenType.EQUAL_TOKEN) || checkToken(TokenType.LESS_EQUAL_TOKEN) || checkToken(TokenType.LESS_TOKEN)){
+        if(checkToken(TokenType.GREATER_EQUAL_TOKEN) || checkToken(TokenType.GREATER_TOKEN) || checkToken(TokenType.EQUAL_TOKEN) || checkToken(TokenType.NOT_EQUAL_TOKEN) || checkToken(TokenType.LESS_EQUAL_TOKEN) || checkToken(TokenType.LESS_TOKEN)){
             TokenType op = scanner.getNextToken().getType();
             Expression RHS = parseAdditiveExpr();
             return new BinaryExpression(SE2, op, RHS);
@@ -880,16 +906,17 @@ public class CMinusParser implements Parser {
         return LHS;
     }
 
-    private Expression parseAdditiveExpr2() throws Exception {
+    private Expression parseAdditiveExpr2(Expression inLHS) throws Exception {
         /*
          * additive-expression’ → term’ {addop term}
          * First(additive-expression’) → { ε, *, /, +, - }
          * Follow(additive-expression’) → { <, >, =, !, ;, ), ], “,”, *, /, +, - }
          */
-        Expression LHS = null;
+        Expression LHS = inLHS;
 
-        if(checkToken(TokenType.MULT_TOKEN) || checkToken(TokenType.DIVIDE_TOKEN) || checkToken(TokenType.PLUS_TOKEN) || checkToken(TokenType.MINUS_TOKEN)){
-            LHS = parseTerm2();
+        Expression newLHS = parseTerm2();
+        if(newLHS != null){
+           LHS = newLHS;
         }
 
         while(checkToken(TokenType.PLUS_TOKEN) || checkToken(TokenType.MINUS_TOKEN)){
@@ -977,7 +1004,11 @@ public class CMinusParser implements Parser {
             matchToken(TokenType.LEFT_BRACKET_TOKEN);
             varcall = parseExpression();
             matchToken(TokenType.RIGHT_BRACKET_TOKEN);
+        } else if (checkToken(TokenType.MULT_TOKEN) || checkToken(TokenType.DIVIDE_TOKEN) || checkToken(TokenType.PLUS_TOKEN)|| checkToken(TokenType.MINUS_TOKEN)|| checkToken(TokenType.LESS_TOKEN)|| checkToken(TokenType.GREATER_TOKEN)|| checkToken(TokenType.LESS_EQUAL_TOKEN) || checkToken(TokenType.GREATER_EQUAL_TOKEN)|| checkToken(TokenType.EQUAL_TOKEN)|| checkToken(TokenType.NOT_EQUAL_TOKEN)|| checkToken(TokenType.SEMI_TOKEN)|| checkToken(TokenType.RIGHT_PAREN_TOKEN) || checkToken(TokenType.RIGHT_BRACKET_TOKEN) || checkToken(TokenType.COMMA_TOKEN)){
+            return ID;
         }
+
+        //{ *, /, +, -, <, >, =, !, ;, ), ], “,”, +, - }
 
         return varcall;
     }
@@ -1009,6 +1040,7 @@ public class CMinusParser implements Parser {
         argList.add(nextExp);
 
         while(checkToken(TokenType.COMMA_TOKEN)){
+            matchToken(TokenType.COMMA_TOKEN);
             nextExp = parseExpression();
             argList.add(nextExp);
         }
