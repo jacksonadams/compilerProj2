@@ -581,6 +581,9 @@ public class CMinusParser implements Parser {
 
         ArrayList<Decl> localDecls = parseLocalDecls();
         ArrayList<Statement> stmtList = parseStmtList();
+        CS = new CompoundStmt(localDecls, stmtList);
+
+        matchToken(TokenType.RIGHT_BRACE_TOKEN);
 
         return CS;
     }
@@ -678,6 +681,23 @@ public class CMinusParser implements Parser {
          * Follow(selection-stmt) → { }, ID, NUM, (, {, if, while, return, else }
          */
         SelectionStmt SS = null;
+
+        matchToken(TokenType.IF_TOKEN);
+        matchToken(TokenType.LEFT_PAREN_TOKEN);
+
+        Expression condition = parseExpression();
+
+        matchToken(TokenType.RIGHT_PAREN_TOKEN);
+
+        Statement ifSequence = parseStatement();
+
+        if(checkToken(TokenType.ELSE_TOKEN)){
+            Statement elseSequence = parseStatement();
+            SS = new SelectionStmt(condition, ifSequence, elseSequence);
+        }
+        else{
+            SS = new SelectionStmt(condition, ifSequence);
+        }
 
         return SS;
     }
