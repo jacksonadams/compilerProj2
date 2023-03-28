@@ -117,6 +117,15 @@ public class CMinusParser implements Parser {
         return (scanner.viewNextToken().getType() == token);
     }
 
+    public Boolean checkTokens(TokenType[] tokens){
+        for(int i = 0; i < tokens.length; i ++){
+            if(scanner.viewNextToken().getType() == tokens[i]){
+                return true;
+            }
+        }
+        return false;
+    }
+
     public Token advanceToken() {
         return scanner.getNextToken();
     }
@@ -732,7 +741,7 @@ public class CMinusParser implements Parser {
         /*
          * expression → ID expression’ | NUM simple-expression’ | (expression)
          * simple-expression’
-         * First(expression) → { ID, NUM, (, ε, *, /, +, - }
+         * First(expression) → { ID, NUM, (}
          * Follow(expression) → { ;, ), ], “,”, *, /, +, - }
          */
         Expression E = null;
@@ -740,16 +749,16 @@ public class CMinusParser implements Parser {
 
         if(checkToken(TokenType.IDENT_TOKEN)){
             String ID = (String)scanner.getNextToken().getData();
-            System.out.println(ID);
-            TokenType test = scanner.getNextToken().getType();
-            if(test == TokenType.EQUAL_TOKEN){
-                System.out.println("equals next");
-
-            }
             E = parseExpression2(ID);
+            if(E == null){
+                return new VarExpression(ID);
+            }
         } else if (checkToken(TokenType.NUM_TOKEN)){
-            matchToken(TokenType.NUM_TOKEN);
+            int num = (int)scanner.getNextToken().getData();
             E = parseSimpleExpr2();
+            if(E == null){
+                return new NumExpression(num);
+            }
         } else if (checkToken(TokenType.LEFT_PAREN_TOKEN)){
             matchToken(TokenType.LEFT_PAREN_TOKEN);
             E = parseExpression();
@@ -772,9 +781,8 @@ public class CMinusParser implements Parser {
          */
         Expression E2 = null;
 
-        if(checkToken(TokenType.EQUAL_TOKEN)){
-            System.out.println("found = ");
-            matchToken(TokenType.EQUAL_TOKEN);
+        if(checkToken(TokenType.ASSIGN_TOKEN)){
+            matchToken(TokenType.ASSIGN_TOKEN);
             Expression RHS = parseExpression();
             return new AssignExpression(new VarExpression(ID), RHS);
         } else if (checkToken(TokenType.LEFT_BRACKET_TOKEN)){
@@ -784,6 +792,11 @@ public class CMinusParser implements Parser {
             E2 = parseExpression();
         } else if (checkToken(TokenType.LEFT_PAREN_TOKEN)){
             //matchToken()
+        } else if (checkToken(TokenType.MULT_TOKEN) || checkToken(TokenType.DIVIDE_TOKEN) || checkToken(TokenType.PLUS_TOKEN) || checkToken(TokenType.MINUS_TOKEN)){
+            // simple-expr'
+            E2 = parseSimpleExpr2();
+        } else if (checkToken(TokenType.SEMI_TOKEN)){
+            return null;
         } else {
             throw new Exception("Syntax error: expression' expects = [ or (.");
         }
@@ -806,7 +819,7 @@ public class CMinusParser implements Parser {
         return E3;
     }
 
-    private Expression parseSimpleExpr2() {
+    private Expression parseSimpleExpr2() throws Exception {
         /*
          * simple-expression’ → additive-expression’ [relop additive expression]
          * First(simple-expression’) → { ε, *, /, +, - }
@@ -814,54 +827,94 @@ public class CMinusParser implements Parser {
          */
         Expression SE2 = null;
 
+        if(checkToken(TokenType.MULT_TOKEN) || checkToken(TokenType.DIVIDE_TOKEN) || checkToken(TokenType.PLUS_TOKEN) || checkToken(TokenType.MINUS_TOKEN)){
+            SE2 = parseAdditiveExpr2();
+        }
+
+        if(checkToken(TokenType.GREATER_EQUAL_TOKEN) || checkToken(TokenType.GREATER_TOKEN) || checkToken(TokenType.EQUAL_TOKEN) || checkToken(TokenType.LESS_EQUAL_TOKEN) || checkToken(TokenType.LESS_TOKEN)){
+            TokenType op = scanner.getNextToken().getType();
+            Expression RHS = parseAdditiveExpr();
+            return new BinaryExpression(SE2, op, RHS);
+        }
+
         return SE2;
     }
 
-    private Expression parseAdditiveExpr() {
+    private Expression parseAdditiveExpr() throws Exception {
         /*
          * additive-expression → term {addop term}
          * First(additive-expression) → { (, ID, NUM }
          * Follow(additive-expression) → { ;, ), ], “,”, *, /, +, - }
          */
-        Expression AE = null;
+        Expression LHS = parseTerm();
 
-        return AE;
+        while(checkToken(TokenType.PLUS_TOKEN) || checkToken(TokenType.MINUS_TOKEN)){
+            TokenType op = scanner.getNextToken().getType();
+            Expression RHS = parseTerm();
+            LHS = new BinaryExpression(LHS, op, RHS);
+        }
+
+        return LHS;
     }
 
-    private Expression parseAdditiveExpr2() {
+    private Expression parseAdditiveExpr2() throws Exception {
         /*
          * additive-expression’ → term’ {addop term}
          * First(additive-expression’) → { ε, *, /, +, - }
          * Follow(additive-expression’) → { <, >, =, !, ;, ), ], “,”, *, /, +, - }
          */
-        Expression AE2 = null;
+        Expression LHS = null;
 
-        return AE2;
+        if(checkToken(TokenType.MULT_TOKEN) || checkToken(TokenType.DIVIDE_TOKEN) || checkToken(TokenType.PLUS_TOKEN) || checkToken(TokenType.MINUS_TOKEN)){
+            LHS = parseTerm2();
+        }
+
+        while(checkToken(TokenType.PLUS_TOKEN) || checkToken(TokenType.MINUS_TOKEN)){
+            TokenType op = scanner.getNextToken().getType();
+            Expression RHS = parseTerm();
+            LHS = new BinaryExpression(LHS, op, RHS);
+        }
+
+        return LHS;
     }
 
-    private Expression parseTerm() {
+    private Expression parseTerm() throws Exception{
         /*
          * term → factor {mulop factor}
          * First(term) → { (, ID, NUM }
          * Follow(term) → { +, -, <, >, =, !, ;, ), ], “,”, *, /, +, - }
          */
-        Expression T = null;
 
-        return T;
+        Expression LHS = parseFactor();
+
+        while(checkToken(TokenType.MULT_TOKEN) || checkToken(TokenType.DIVIDE_TOKEN)){
+            TokenType op = scanner.getNextToken().getType();
+            Expression RHS = parseFactor();
+            LHS = new BinaryExpression(LHS, op, RHS);
+        }
+
+        return LHS;
     }
 
-    private Expression parseTerm2() {
+    private Expression parseTerm2() throws Exception {
         /*
          * term’ → {mulop factor}
          * First(term’) → { ε. *, / }
          * Follow(term’) → { +, - }
          */
-        Expression T2 = null;
 
-        return T2;
+        Expression LHS = null;
+
+        while(checkToken(TokenType.MULT_TOKEN) || checkToken(TokenType.DIVIDE_TOKEN)){
+            TokenType op = scanner.getNextToken().getType();
+            Expression RHS = parseFactor();
+            LHS = new BinaryExpression(LHS, op, RHS);
+        }
+
+        return LHS;
     }
 
-    private Expression parseFactor() {
+    private Expression parseFactor() throws Exception {
         /*
          * factor → “(” expression “)” | ID varcall | NUM
          * First(factor) → { (, ID, NUM }
@@ -869,16 +922,38 @@ public class CMinusParser implements Parser {
          */
         Expression F = null;
 
+        if(checkToken(TokenType.LEFT_PAREN_TOKEN)){
+            matchToken(TokenType.LEFT_PAREN_TOKEN);
+            F = parseExpression();
+            matchToken(TokenType.RIGHT_PAREN_TOKEN);
+        } else if (checkToken(TokenType.IDENT_TOKEN)){
+            String ID = (String)scanner.getNextToken().getData();
+            F = parseVarCall();
+        } else if (checkToken(TokenType.NUM_TOKEN)){
+            int NUM = (int)scanner.getNextToken().getData();
+            return new NumExpression(NUM);
+        }
+
         return F;
     }
 
-    private CallExpression parseVarCall() {
+    private CallExpression parseVarCall() throws Exception {
         /*
          * varcall → “(“ args “)” | “[“ expression “]” | ε
          * First(varcall) → { (, [, ε }
          * Follow(varcall) → { *, /, +, -, <, >, =, !, ;, ), ], “,”, *, /, +, - }
          */
         CallExpression varcall = null;
+
+        if(checkToken(TokenType.LEFT_PAREN_TOKEN)){
+            matchToken(TokenType.LEFT_PAREN_TOKEN);
+            Expression args = parseArgs();
+            matchToken(TokenType.RIGHT_PAREN_TOKEN);
+        } else if (checkToken(TokenType.LEFT_BRACKET_TOKEN)){
+            matchToken(TokenType.LEFT_BRACKET_TOKEN);
+            Expression expr = parseExpression();
+            matchToken(TokenType.RIGHT_BRACKET_TOKEN);
+        }
 
         return varcall;
     }

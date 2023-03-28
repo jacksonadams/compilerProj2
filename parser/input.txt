@@ -1,4 +1,6 @@
-int Test (int a, int b, int c) {
+int Test () {
     int x;
     x = 10;
+    x = y;
+    x = x + 3;
 }
