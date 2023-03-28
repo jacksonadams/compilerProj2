@@ -297,14 +297,23 @@ public class CMinusParser implements Parser {
         abstract void print(String parentSpace);
     }
 
-    public class AssignExpression extends Expression { 
+    public class AssignExpression extends Expression {
         // example: x = y, x = 3
         // has to be a var on the left
-        public AssignExpression (VarExpression LHS, Expression RHS) {
+        VarExpression LHS;
+        Expression RHS;
 
+        public AssignExpression(VarExpression LHS, Expression RHS) {
+            this.LHS = LHS;
+            this.RHS = RHS;
         }
 
-        void print(String parentSpace){}
+        void print(String parentSpace) {
+            String mySpace = "  " + parentSpace;
+            System.out.println(mySpace + "=");
+            this.LHS.print(mySpace);
+            this.RHS.print(mySpace);
+        }
     }
 
     public class BinaryExpression extends Expression {
@@ -703,9 +712,9 @@ public class CMinusParser implements Parser {
 
         if(checkToken(TokenType.IDENT_TOKEN)){
             temp = matchToken(TokenType.IDENT_TOKEN);
-            String name = (String)temp.getData();
+            String ID = (String)temp.getData();
 
-            E = parseExpression2(name);
+            Expression E2 = parseExpression2(ID);
         }
         else if(checkToken(TokenType.NUM_TOKEN)){
 
@@ -717,36 +726,112 @@ public class CMinusParser implements Parser {
         return E;
     }
     
-    private Expression parseExpression2(String name){ 
-        /* expression’ → = expression | [expression] expression’’ | (args) simple-expression’ | simple-expression’
-         * First(expression’) → { =, ID, NUM, ( }
+    private Expression parseExpression2(String ID){ 
+        /* expression’ → = expression | "["expression"]" expression’’ | (args) simple-expression’ | simple-expression’
+         * First(expression’) → { =, [, (, ε, *, /, +, -, <, <=, >, >=, ==, != }
          * Follow(expression’) → { ;, ), ], “,” }
          */
         Expression E2 = null;
+        int[] myVar;
+        //myVar[7 < 1] = 3;
 
-        if(checkToken(TokenType.EQUAL_TOKEN)){
-            
+        if(checkToken(TokenType.ASSIGN_TOKEN)){
+            matchToken(TokenType.ASSIGN_TOKEN);
+
+            VarExpression LHS = new VarExpression(ID);
+            Expression RHS = parseExpression();
+            E2 = new AssignExpression(LHS, RHS);
+        }
+        else if(checkToken(TokenType.LEFT_BRACKET_TOKEN)){
+            matchToken(TokenType.LEFT_BRACKET_TOKEN);
+
+            Expression E = parseExpression();
+
+            matchToken(TokenType.RIGHT_BRACKET_TOKEN);
+
+            VarExpression tempE = new VarExpression(ID);
+            Expression E3 = parseExpression3(tempE);
+
+            /*
+             * Do something with all these expressions
+             */
+        }
+        else if(checkToken(TokenType.LEFT_PAREN_TOKEN)){
+            matchToken(TokenType.LEFT_PAREN_TOKEN);
+
+            Expression args = parseArgs();
+            // Do a varcall with the args
+
+            matchToken(TokenType.RIGHT_PAREN_TOKEN);
+
+            Expression SE2 = parseSimpleExpr2();
+
+            // Do something with the args and simple expression
+        }
+        else if(checkToken(TokenType.MULT_TOKEN)
+        || checkToken(TokenType.DIVIDE_TOKEN)
+        || checkToken(TokenType.PLUS_TOKEN)
+        || checkToken(TokenType.MINUS_TOKEN)
+        || checkToken(TokenType.LESS_TOKEN)
+        || checkToken(TokenType.LESS_EQUAL_TOKEN)
+        || checkToken(TokenType.GREATER_TOKEN)
+        || checkToken(TokenType.GREATER_EQUAL_TOKEN)
+        || checkToken(TokenType.EQUAL_TOKEN)
+        || checkToken(TokenType.NOT_EQUAL_TOKEN)){
+            Expression SE2 = parseSimpleExpr2();
+
+            // Do something with the simple expression
         }
 
         return E2;
     }
     
-    private Expression parseExpression3(){ 
+    private Expression parseExpression3(VarExpression LHS){ 
         /* expression’’ → = expression | simple-expression’
-         * First(expression’’) → { ID, NUM, ( }
+         * First(expression’’) → {  =, ε, *, /, +, -, <, <=, >, >=, ==, !=  }
          * Follow(expression’’) → { ;, ), ], “,” }
          */
         Expression E3 = null;
+
+        if(checkToken(TokenType.ASSIGN_TOKEN)){
+            matchToken(TokenType.EQUAL_TOKEN);
+
+            Expression RHS = parseExpression();
+            E3 = new AssignExpression(LHS, RHS);
+        }
+        else if(checkToken(TokenType.MULT_TOKEN)
+        || checkToken(TokenType.DIVIDE_TOKEN)
+        || checkToken(TokenType.PLUS_TOKEN)
+        || checkToken(TokenType.MINUS_TOKEN)
+        || checkToken(TokenType.LESS_TOKEN)
+        || checkToken(TokenType.LESS_EQUAL_TOKEN)
+        || checkToken(TokenType.GREATER_TOKEN)
+        || checkToken(TokenType.GREATER_EQUAL_TOKEN)
+        || checkToken(TokenType.EQUAL_TOKEN)
+        || checkToken(TokenType.NOT_EQUAL_TOKEN)){
+            E3 = parseSimpleExpr2();
+        }
 
         return E3;
     }
     
     private Expression parseSimpleExpr2(){ 
-        /* simple-expression’ → additive-expression’ [relop additive expression]
-         * First(simple-expression’) → { ε, *, /, +, - }
+        /* simple-expression’ → additive-expression’ [relop additive-expression]
+         * First(simple-expression’) → { ε, *, /, +, -, <, <=, >, >=, ==, != }
          * Follow(simple-expression’) → { ;, ), ], “,” }
          */
         Expression SE2 = null;
+
+        Expression AE2 = parseAdditiveExpr2();
+
+        if(checkToken(TokenType.LESS_TOKEN)
+        || checkToken(TokenType.LESS_EQUAL_TOKEN)
+        || checkToken(TokenType.GREATER_TOKEN)
+        || checkToken(TokenType.GREATER_EQUAL_TOKEN)
+        || checkToken(TokenType.EQUAL_TOKEN)
+        || checkToken(TokenType.NOT_EQUAL_TOKEN)){
+            // Create a binary expression
+        }
 
         return SE2;
     }
