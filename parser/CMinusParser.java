@@ -423,24 +423,26 @@ public class CMinusParser implements Parser {
          * Follow(decl') → { $, void, int }
          */ 
         Decl decl2 = null;
-        VarExpression var = null;
+        Token temp;
 
         if(checkToken(TokenType.SEMI_TOKEN)){
             matchToken(TokenType.SEMI_TOKEN);
             
-            var = new VarExpression(name);
+            VarExpression var = new VarExpression(name);
             decl2 = new VarDecl(var);
         }
         else if(checkToken(TokenType.LEFT_BRACKET_TOKEN)){
             matchToken(TokenType.LEFT_BRACKET_TOKEN);
             
-            int value = (int)matchToken(TokenType.NUM_TOKEN).getData();
-            var = new VarExpression(name, value);
+            temp = matchToken(TokenType.NUM_TOKEN);
+            int value = (int)temp.getData();
+            VarExpression var = new VarExpression(name, value);
             decl2 = new VarDecl(var);
 
             matchToken(TokenType.RIGHT_BRACKET_TOKEN);
         }
         else if(checkToken(TokenType.LEFT_PAREN_TOKEN)){
+            VarExpression var = new VarExpression(name);
             decl2 = parseFunDecl(returnType, var);
         }
 
@@ -499,6 +501,25 @@ public class CMinusParser implements Parser {
          * Follow(param) → { “,”, ) }
          */
         Param param = null;
+        Token temp;
+
+        matchToken(TokenType.INT_TOKEN);
+
+        temp = matchToken(TokenType.IDENT_TOKEN);
+        String name = (String)temp.getData();
+
+        if(checkToken(TokenType.LEFT_BRACKET_TOKEN)){
+            matchToken(TokenType.LEFT_BRACKET_TOKEN);
+            matchToken(TokenType.RIGHT_BRACKET_TOKEN);
+
+            // Replace this once params can capture array variables
+            VarExpression var = new VarExpression(name);
+            param = new Param(var);
+        }
+        else{
+            VarExpression var = new VarExpression(name);
+            param = new Param(var);
+        }
 
         return param;
     }
