@@ -304,11 +304,15 @@ public class CMinusParser implements Parser {
     public class ReturnStmt extends Statement {
         // example: return x;
         // could also be blank: return;
+        Expression LHS;
         public ReturnStmt(Expression LHS) {
-
+            this.LHS = LHS;
         }
 
         void print(String parentSpace) {
+            String mySpace = parentSpace + "  ";
+            System.out.println(mySpace + "return");
+            this.LHS.print(mySpace);
         }
     }
 
@@ -338,21 +342,40 @@ public class CMinusParser implements Parser {
 
     public class BinaryExpression extends Expression {
         // example: 3 + 4, a + b
-        public BinaryExpression(Expression LHS, TokenType op, Expression RHS) {
+        Expression LHS;
+        TokenType op;
+        Expression RHS;
 
+        public BinaryExpression(Expression LHS, TokenType op, Expression RHS) {
+            this.LHS = LHS;
+            this.op = op;
+            this.RHS = RHS;
         }
 
         void print(String parentSpace) {
+            String mySpace = parentSpace + "  ";
+            //System.out.println
         }
     }
 
     public class CallExpression extends Expression {
         // example: gcd(3, 4)
-        public CallExpression(VarExpression LHS, Expression[] args) {
+        VarExpression LHS;
+        ArrayList<Expression> args;
 
+        public CallExpression(VarExpression LHS, ArrayList<Expression> args) {
+            this.LHS = LHS;
+            this.args = args;
         }
 
         void print(String parentSpace) {
+            String mySpace = "  " + parentSpace;
+            this.LHS.print(mySpace);
+            System.out.println("(");
+            for (int i = 0; i < args.size(); i++) {
+                args.get(i).print(mySpace + "  ");
+            }
+            System.out.println(")");
         }
     }
 
@@ -407,9 +430,9 @@ public class CMinusParser implements Parser {
 
         // if we're no longer in the first set, check if we're in the follow set - if
         // yes, continue, if not, error
-        /*if (!checkToken(TokenType.EOF_TOKEN)) {
-            throw new Exception("Syntax error: expected int or void. (parseProgram)");
-        }*/
+        if (!checkToken(TokenType.EOF_TOKEN)) {
+            throw new Exception("Parse error in parseProgram(): expected end of file.");
+        }
 
         return new Program(declList);
     }
@@ -928,7 +951,7 @@ public class CMinusParser implements Parser {
             matchToken(TokenType.RIGHT_PAREN_TOKEN);
         } else if (checkToken(TokenType.IDENT_TOKEN)){
             String ID = (String)scanner.getNextToken().getData();
-            F = parseVarCall();
+            F = parseVarCall(new VarExpression(ID));
         } else if (checkToken(TokenType.NUM_TOKEN)){
             int NUM = (int)scanner.getNextToken().getData();
             return new NumExpression(NUM);
@@ -937,45 +960,58 @@ public class CMinusParser implements Parser {
         return F;
     }
 
-    private CallExpression parseVarCall() throws Exception {
+    private Expression parseVarCall(VarExpression ID) throws Exception {
         /*
          * varcall → “(“ args “)” | “[“ expression “]” | ε
          * First(varcall) → { (, [, ε }
          * Follow(varcall) → { *, /, +, -, <, >, =, !, ;, ), ], “,”, *, /, +, - }
          */
-        CallExpression varcall = null;
+        Expression varcall = null;
 
         if(checkToken(TokenType.LEFT_PAREN_TOKEN)){
             matchToken(TokenType.LEFT_PAREN_TOKEN);
-            Expression args = parseArgs();
+            ArrayList<Expression> args = parseArgs();
             matchToken(TokenType.RIGHT_PAREN_TOKEN);
+            return new CallExpression(ID, args);
         } else if (checkToken(TokenType.LEFT_BRACKET_TOKEN)){
             matchToken(TokenType.LEFT_BRACKET_TOKEN);
-            Expression expr = parseExpression();
+            varcall = parseExpression();
             matchToken(TokenType.RIGHT_BRACKET_TOKEN);
         }
 
         return varcall;
     }
 
-    private Expression parseArgs() {
+    private ArrayList<Expression> parseArgs() throws Exception {
         /*
          * args → arg-list | ε
          * First(args) → { ID, NUM, (, ε, *, / }
          * Follow(args) → { ) }
          */
-        Expression args = null;
+        ArrayList<Expression> args = new ArrayList<Expression>();
+
+        if(checkToken(TokenType.IDENT_TOKEN) || checkToken(TokenType.NUM_TOKEN) || checkToken(TokenType.LEFT_PAREN_TOKEN)){
+            args = parseArgList();
+        }
 
         return args;
     }
 
-    private ArrayList<Expression> parseArgList() {
+    private ArrayList<Expression> parseArgList() throws Exception {
         /*
          * arg-list → expression {, expression}
          * First(arg-list) → { ID, NUM, (, ε, *, / }
          * Follow(arg-list) → { ) }
          */
-        ArrayList<Expression> argList = null;
+        ArrayList<Expression> argList = new ArrayList<Expression>();
+
+        Expression nextExp = parseExpression();
+        argList.add(nextExp);
+
+        while(checkToken(TokenType.COMMA_TOKEN)){
+            nextExp = parseExpression();
+            argList.add(nextExp);
+        }
 
         return argList;
     }
