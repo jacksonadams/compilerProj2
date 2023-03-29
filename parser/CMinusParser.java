@@ -103,10 +103,10 @@ public class CMinusParser implements Parser {
     public Token advanceToken() {
         return scanner.getNextToken();
     }
-    public Token matchToken(TokenType token) {
+    public Token matchToken(TokenType token) throws Exception {
         Token nextToken = scanner.getNextToken();
         if (nextToken.getType() != token) {
-            // throw error
+            throw new Exception("Error: Unexpected token. Was expecting " + token.toString() + " but got " + nextToken.toString());
         }
         return nextToken;
     }
@@ -158,7 +158,7 @@ public class CMinusParser implements Parser {
 
         void print(String parentSpace) throws IOException {
             outputFile.write(parentSpace + INDENT + "int\n");
-            this.name.print(parentSpace + INDENT + " ");
+            this.name.print(parentSpace + INDENT);
         }
     }
 
@@ -452,6 +452,7 @@ public class CMinusParser implements Parser {
             String returnType = "int";
             matchToken(TokenType.INT_TOKEN);
 
+            
             Token temp = matchToken(TokenType.IDENT_TOKEN);
             String name = (String) temp.getData();
             decl = parseDecl2(returnType, name);
@@ -553,7 +554,7 @@ public class CMinusParser implements Parser {
         return params;
     }
 
-    private ArrayList<Param> parseParamList() {
+    private ArrayList<Param> parseParamList() throws Exception {
         /* param-list → param {, param}
          * First(params-list) → { int }
          * Follow(param-list) → { ) }
@@ -573,7 +574,7 @@ public class CMinusParser implements Parser {
         return paramList;
     }
 
-    private Param parseParam() {
+    private Param parseParam() throws Exception {
         /* param → int ID [“[“ “]”]
          * First(param) → { int }
          * Follow(param) → { “,”, ) }
