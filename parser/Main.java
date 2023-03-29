@@ -32,11 +32,11 @@ public class Main {
         CMinusScanner myScanner = new CMinusScanner(inputReader);
 
         // Get the output file to print into
-        FileWriter outputFile = new FileWriter("scanner/output.txt"); 
+        FileWriter outputFile = new FileWriter("parser/output.txt"); 
 
         // Create parser
         CMinusParser myParser = new CMinusParser(myScanner);
-        myParser.printTree();
+        myParser.printTree(outputFile);
 
         // Close output file
         outputFile.close();

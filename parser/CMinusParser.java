@@ -1,5 +1,7 @@
 package parser;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -75,6 +77,7 @@ public class CMinusParser implements Parser {
     public Program program;
     public HashMap < TokenType, String > ops = new HashMap < TokenType, String > ();
     public String INDENT = "    ";
+    public FileWriter outputFile;
 
     public CMinusParser(CMinusScanner inScanner) throws Exception {
         scanner = inScanner;
@@ -116,14 +119,14 @@ public class CMinusParser implements Parser {
             this.decls = decls;
         }
 
-        void print() {
-            System.out.println("Program {");
+        void print() throws IOException {
+            outputFile.write("Program {\n");
             for (int i = 0; i < decls.size(); i++) {
                 if (decls.get(i) != null) {
                     decls.get(i).print("");
                 }
             }
-            System.out.println("}");
+            outputFile.write("}\n");
         }
     }
 
@@ -135,14 +138,14 @@ public class CMinusParser implements Parser {
             this.name = name;
         }
 
-        void print(String parentSpace) {
+        void print(String parentSpace) throws IOException {
             this.name.print(parentSpace + INDENT + "int ");
         }
     }
 
     abstract class Decl {
         // abstract, will be one of the other two decls
-        abstract void print(String parentSpace);
+        abstract void print(String parentSpace) throws IOException;
     }
 
     public class VarDecl extends Decl {
@@ -153,8 +156,8 @@ public class CMinusParser implements Parser {
             this.name = name;
         }
 
-        void print(String parentSpace) {
-            System.out.println(parentSpace + INDENT + "int");
+        void print(String parentSpace) throws IOException {
+            outputFile.write(parentSpace + INDENT + "int\n");
             this.name.print(parentSpace + INDENT + " ");
         }
     }
@@ -174,24 +177,24 @@ public class CMinusParser implements Parser {
             this.content = content;
         }
 
-        void print(String parentSpace) {
+        void print(String parentSpace) throws IOException {
             String mySpace = parentSpace + INDENT;
-            System.out.println(mySpace + "function " + this.returnType);
+            outputFile.write(mySpace + "function " + this.returnType + "\n");
             name.print(mySpace);
-            System.out.println(mySpace + INDENT + "Params (");
+            outputFile.write(mySpace + INDENT + "Params (\n");
             if (this.params != null) {
                 for (int i = 0; i < params.size(); i++) {
                     params.get(i).print(mySpace);
                 }
             }
-            System.out.println(mySpace + INDENT + ")");
+            outputFile.write(mySpace + INDENT + ")\n");
             content.print(mySpace);
         }
     }
 
     abstract class Statement {
         // abstract, will be one of the other 5 statements
-        abstract void print(String parentSpace);
+        abstract void print(String parentSpace) throws IOException;
     }
 
     public class ExpressionStmt extends Statement {
@@ -202,7 +205,7 @@ public class CMinusParser implements Parser {
             this.statement = statement;
         }
 
-        void print(String parentSpace) {
+        void print(String parentSpace) throws IOException {
             this.statement.print(parentSpace);
         }
     }
@@ -217,16 +220,16 @@ public class CMinusParser implements Parser {
             this.statements = statements;
         }
 
-        void print(String parentSpace) {
+        void print(String parentSpace) throws IOException {
             String mySpace = parentSpace + INDENT;
-            System.out.println(mySpace + "{");
+            outputFile.write(mySpace + "{\n");
             for (int i = 0; i < localDecls.size(); i++) {
                 localDecls.get(i).print(mySpace);
             }
             for (int i = 0; i < statements.size(); i++) {
                 statements.get(i).print(mySpace);
             }
-            System.out.println(mySpace + "}");
+            outputFile.write(mySpace + "}\n");
         }
     }
 
@@ -246,14 +249,14 @@ public class CMinusParser implements Parser {
             this.ifSequence = ifSequence;
         }
 
-        void print(String parentSpace) {
+        void print(String parentSpace) throws IOException {
             String mySpace = INDENT + parentSpace;
-            System.out.println(mySpace + "if (");
+            outputFile.write(mySpace + "if (\n");
             this.condition.print(mySpace);
-            System.out.println(mySpace + ")");
+            outputFile.write(mySpace + ")\n");
             this.ifSequence.print(mySpace);
             if (this.elseSequence != null) {
-                System.out.println(mySpace + "else");
+                outputFile.write(mySpace + "else\n");
                 this.elseSequence.print(mySpace);
             }
         }
@@ -268,12 +271,12 @@ public class CMinusParser implements Parser {
             this.sequence = sequence;
         }
 
-        void print(String parentSpace) {
+        void print(String parentSpace) throws IOException {
             String mySpace = INDENT + parentSpace;
-            System.out.println(mySpace + "while");
-            System.out.println(mySpace + "(");
+            outputFile.write(mySpace + "while\n");
+            outputFile.write(mySpace + "(\n");
             this.condition.print(mySpace);
-            System.out.println(mySpace + ")");
+            outputFile.write(mySpace + ")\n");
             this.sequence.print(mySpace);
         }
     }
@@ -287,9 +290,9 @@ public class CMinusParser implements Parser {
             this.LHS = LHS;
         }
 
-        void print(String parentSpace) {
+        void print(String parentSpace) throws IOException {
             String mySpace = INDENT + parentSpace;
-            System.out.println(mySpace + "return");
+            outputFile.write(mySpace + "return\n");
             if (this.LHS != null) {
                 this.LHS.print(mySpace);
             }
@@ -298,7 +301,7 @@ public class CMinusParser implements Parser {
 
     abstract class Expression {
         // abstract expression, will be one of the other 5
-        abstract void print(String parentSpace);
+        abstract void print(String parentSpace) throws IOException;
     }
 
     public class AssignExpression extends Expression {
@@ -312,9 +315,9 @@ public class CMinusParser implements Parser {
             this.RHS = RHS;
         }
 
-        void print(String parentSpace) {
+        void print(String parentSpace) throws IOException {
             String mySpace = INDENT + parentSpace;
-            System.out.println(mySpace + "=");
+            outputFile.write(mySpace + "=\n");
             this.LHS.print(mySpace);
             this.RHS.print(mySpace);
         }
@@ -332,9 +335,9 @@ public class CMinusParser implements Parser {
             this.RHS = RHS;
         }
 
-        void print(String parentSpace) {
+        void print(String parentSpace) throws IOException {
             String mySpace = parentSpace + INDENT;
-            System.out.println(mySpace + ops.get(this.op));
+            outputFile.write(mySpace + ops.get(this.op) + "\n");
             this.LHS.print(mySpace);
             this.RHS.print(mySpace);
         }
@@ -350,14 +353,14 @@ public class CMinusParser implements Parser {
             this.args = args;
         }
 
-        void print(String parentSpace) {
+        void print(String parentSpace) throws IOException {
             String mySpace = INDENT + parentSpace;
             this.LHS.print(parentSpace);
-            System.out.println(mySpace + "(");
+            outputFile.write(mySpace + "(\n");
             for (int i = 0; i < args.size(); i++) {
                 args.get(i).print(mySpace + "  ");
             }
-            System.out.println(mySpace + ")");
+            outputFile.write(mySpace + ")\n");
         }
     }
 
@@ -368,8 +371,8 @@ public class CMinusParser implements Parser {
             this.num = num;
         }
 
-        void print(String parentSpace) {
-            System.out.println(INDENT + parentSpace + this.num);
+        void print(String parentSpace) throws IOException {
+            outputFile.write(INDENT + parentSpace + this.num + "\n");
         }
     }
 
@@ -391,15 +394,15 @@ public class CMinusParser implements Parser {
             this.blankArray = blankArray;
         }
 
-        void print(String parentSpace) {
+        void print(String parentSpace) throws IOException {
             if (this.blankArray){
-                System.out.println(INDENT + parentSpace + this.var + "[]");
+                outputFile.write(INDENT + parentSpace + this.var + "[]\n");
             } else if (this.num == null) {
-                System.out.println(INDENT + parentSpace + this.var);
+                outputFile.write(INDENT + parentSpace + this.var + "\n");
             } else {
-                System.out.println(INDENT + parentSpace + this.var + " [");
+                outputFile.write(INDENT + parentSpace + this.var + " [\n");
                 this.num.print(INDENT + parentSpace);
-                System.out.println(INDENT + parentSpace + "]");
+                outputFile.write(INDENT + parentSpace + "]\n");
             }
         }
     }
@@ -1086,7 +1089,8 @@ public class CMinusParser implements Parser {
     }
 
     /* Print AST */
-    public void printTree() {
+    public void printTree(FileWriter file) throws IOException {
+        outputFile = file;
         program.print();
     }
 }
