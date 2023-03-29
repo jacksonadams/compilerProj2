@@ -1,4 +1,8 @@
 /* insertion sort */
+
+int x;
+int y[10];
+
 int insertionSort ( int inputArray[], int arrayLength )
 { 
     int j[9];

@@ -479,24 +479,10 @@ public class CMinusParser implements Parser {
          * Follow(decl') → { $, void, int }
          */
         Decl decl2 = null;
-        Token temp;
 
-        if (checkToken(TokenType.SEMI_TOKEN)) {
-            matchToken(TokenType.SEMI_TOKEN);
-
-            VarExpression var = new VarExpression(name);
-            decl2 = new VarDecl(var);
-        } 
-        else if (checkToken(TokenType.LEFT_BRACKET_TOKEN)) {
-            matchToken(TokenType.LEFT_BRACKET_TOKEN);
-
-            temp = matchToken(TokenType.NUM_TOKEN);
-            Expression value = new NumExpression((int) temp.getData());
-            VarExpression var = new VarExpression(name, value);
-            decl2 = new VarDecl(var);
-
-            matchToken(TokenType.RIGHT_BRACKET_TOKEN);
-        } 
+        if (checkToken(TokenType.LEFT_BRACKET_TOKEN) || checkToken(TokenType.SEMI_TOKEN)) {
+            decl2 = parseVarDecl(name);
+        }  
         else if (checkToken(TokenType.LEFT_PAREN_TOKEN)) {
             VarExpression var = new VarExpression(name);
             decl2 = parseFunDecl(returnType, var);
