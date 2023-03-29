@@ -85,7 +85,7 @@ public class CMinusScanner implements Scanner {
                     } else if (charValue == -1){
                         currentToken = TokenType.EOF_TOKEN;
                         state = StateType.DONE;
-                    } else if (c == ' ' || c == '\t' || c == '\n'){
+                    } else if (c == ' ' || c == '\t' || c == '\n' || c == '\r'){
                         // white space: nothing happens
                     } else {
                         state = StateType.DONE;
