@@ -414,7 +414,8 @@ public class CMinusParser implements Parser {
         ArrayList < Decl > declList = new ArrayList < Decl > ();
 
         // check if next token is in first set
-        while (checkToken(TokenType.INT_TOKEN) || checkToken(TokenType.VOID_TOKEN)) {
+        while (checkToken(TokenType.INT_TOKEN) 
+        || checkToken(TokenType.VOID_TOKEN)) {
             Decl nextDecl = parseDecl();
             declList.add(nextDecl);
         }
@@ -465,12 +466,15 @@ public class CMinusParser implements Parser {
          * Follow(fun-decl) → { $, void, int }
          */
 
+        Decl funDecl = null;
+
         matchToken(TokenType.LEFT_PAREN_TOKEN);
         ArrayList < Param > paramList = parseParams();
         matchToken(TokenType.RIGHT_PAREN_TOKEN);
         CompoundStmt content = parseCompoundStmt();
+        funDecl = new FunDecl(returnType, name, paramList, content);
 
-        return new FunDecl(returnType, name, paramList, content);
+        return funDecl;
     }
 
     private Decl parseDecl2(String returnType, String name) throws Exception {
@@ -600,12 +604,16 @@ public class CMinusParser implements Parser {
          * Follow(compound-stmt) → { $, void, int, “}”, ID, NUM, (, *, /, +, -, ;, {, if, while, return, else }
          */
 
+        CompoundStmt CS = null;
+
         matchToken(TokenType.LEFT_BRACE_TOKEN);
         ArrayList<Decl> localDecls = parseLocalDecls();
         ArrayList<Statement> stmtList = parseStmtList();
         matchToken(TokenType.RIGHT_BRACE_TOKEN);
 
-        return new CompoundStmt(localDecls, stmtList);
+        CS = new CompoundStmt(localDecls, stmtList);
+
+        return CS;
     }
 
     private ArrayList<Decl> parseLocalDecls() throws Exception {
@@ -706,6 +714,7 @@ public class CMinusParser implements Parser {
          * First(selection-stmt) → { if }
          * Follow(selection-stmt) → { }, ID, NUM, (, ;, {, if, while, return, else }
          */
+        SelectionStmt SS = null;
 
         matchToken(TokenType.IF_TOKEN);
         matchToken(TokenType.LEFT_PAREN_TOKEN);
@@ -716,16 +725,20 @@ public class CMinusParser implements Parser {
         if (checkToken(TokenType.ELSE_TOKEN)) {
             matchToken(TokenType.ELSE_TOKEN);
             Statement elseSequence = parseStatement();
-            return new SelectionStmt(condition, ifSequence, elseSequence);
+            SS = new SelectionStmt(condition, ifSequence, elseSequence);
+        }
+        else{
+            SS = new SelectionStmt(condition, ifSequence);
         }
         
-        return new SelectionStmt(condition, ifSequence);
+        return SS;
     }
     private IterationStmt parseIterationStmt() throws Exception {
         /* iteration-stmt → while “(” expression “)” statement
          * First(iteration-stmt) → { while }
          * Follow(iteration-stmt) → { }, ID, NUM, (, ;, {, if, while, return, else }
          */
+        IterationStmt IS = null;
 
         matchToken(TokenType.WHILE_TOKEN);
         matchToken(TokenType.LEFT_PAREN_TOKEN);
@@ -733,7 +746,9 @@ public class CMinusParser implements Parser {
         matchToken(TokenType.RIGHT_PAREN_TOKEN);
         Statement activity = parseStatement();
 
-        return new IterationStmt(condition, activity);
+        IS = new IterationStmt(condition, activity);
+
+        return IS;
     }
 
     private ReturnStmt parseReturnStmt() throws Exception {
@@ -773,7 +788,7 @@ public class CMinusParser implements Parser {
             int num = (int) scanner.getNextToken().getData();
             E = parseSimpleExpr2(new NumExpression(num));
             if (E == null) {
-                return new NumExpression(num);
+                E = new NumExpression(num);
             }
         } 
         else if (checkToken(TokenType.LEFT_PAREN_TOKEN)) {
@@ -792,6 +807,7 @@ public class CMinusParser implements Parser {
          * First(expression’) → { =, [, (, ε, *, /, +, -, <, <=, >, >=, ==, != }
          * Follow(expression’) → { ;, ), ], “,” }
          */
+
         Expression E2 = null;
 
         if (checkToken(TokenType.ASSIGN_TOKEN)) {
@@ -833,9 +849,8 @@ public class CMinusParser implements Parser {
         } 
         else if (checkToken(TokenType.SEMI_TOKEN) 
             || checkToken(TokenType.RIGHT_PAREN_TOKEN) 
-            || checkToken(TokenType.COMMA_TOKEN)
-            || checkToken(TokenType.RIGHT_BRACKET_TOKEN)) {
-            return new VarExpression(ID);
+            || checkToken(TokenType.COMMA_TOKEN)) {
+            E2 = new VarExpression(ID);
         } 
         else {
             throw new Exception("Syntax error: expression' expects = [ or (.");
@@ -848,6 +863,7 @@ public class CMinusParser implements Parser {
          * First(expression’’) → {  =, ε, *, /, +, -, <, <=, >, >=, ==, !=  }
          * Follow(expression’’) → { ;, ), ], “,” }
          */
+
         Expression E3 = LHS;
 
         if (checkToken(TokenType.ASSIGN_TOKEN)) {
@@ -876,6 +892,7 @@ public class CMinusParser implements Parser {
          * First(simple-expression’) → { ε, *, /, +, -, <, <=, >, >=, ==, != }
          * Follow(simple-expression’) → { ;, ), ], “,” }
          */
+        
         Expression SE2 = LHS;
         
         if (checkToken(TokenType.MULT_TOKEN) 
@@ -892,7 +909,7 @@ public class CMinusParser implements Parser {
         || checkToken(TokenType.LESS_TOKEN)) {
             TokenType op = scanner.getNextToken().getType();
             Expression RHS = parseAdditiveExpr();
-            return new BinaryExpression(SE2, op, RHS);
+            SE2 = new BinaryExpression(SE2, op, RHS);
         }
         
         return SE2;
@@ -918,7 +935,7 @@ public class CMinusParser implements Parser {
     private Expression parseAdditiveExpr2(Expression inLHS) throws Exception {
         /* additive-expression’ → term’ {addop term}
          * First(additive-expression’) → { ε, *, /, +, - }
-         * Follow(additive-expression’) → { <, >, =, !, ;, ), ], “,” }
+         * Follow(additive-expression’) → { <, <=, >, >=, ==, !=, ;, ), ], “,” }
          */
 
         Expression LHS = inLHS;
@@ -939,7 +956,7 @@ public class CMinusParser implements Parser {
     private Expression parseTerm() throws Exception {
         /* term → factor {mulop factor}
          * First(term) → { (, ID, NUM }
-         * Follow(term) → { +, -, <, >, =, !, ;, ), ], “,” }
+         * Follow(term) → { +, -, <, <=, >, >=, ==, !=, ;, ), ], “,” }
          */
 
         Expression LHS = parseFactor();
@@ -973,7 +990,7 @@ public class CMinusParser implements Parser {
     private Expression parseFactor() throws Exception {
         /* factor → “(” expression “)” | ID varcall | NUM
          * First(factor) → { (, ID, NUM }
-         * Follow(factor) → { *, /, +, -, <, >, =, !, ;, ), ], “,” }
+         * Follow(factor) → { *, /, +, -, <, <=, >, >=, ==, !=, ;, ), ], “,” }
          */
 
         Expression F = null;
@@ -989,7 +1006,7 @@ public class CMinusParser implements Parser {
         } 
         else if (checkToken(TokenType.NUM_TOKEN)) {
             int NUM = (int) scanner.getNextToken().getData();
-            return new NumExpression(NUM);
+            F = new NumExpression(NUM);
         }
         
         return F;
@@ -997,7 +1014,7 @@ public class CMinusParser implements Parser {
     private Expression parseVarCall(VarExpression ID) throws Exception {
         /* varcall → “(“ args “)” | “[“ expression “]” | ε
          * First(varcall) → { (, [, ε }
-         * Follow(varcall) → { *, /, +, -, <, >, =, !, ;, ), ], “,”, *, /, +, - }
+         * Follow(varcall) → { *, /, +, -, <, <=, >, >=, ==, !=, ;, ), ], “,”  }
          */
 
         Expression varcall = null;
@@ -1006,7 +1023,7 @@ public class CMinusParser implements Parser {
             matchToken(TokenType.LEFT_PAREN_TOKEN);
             ArrayList < Expression > args = parseArgs();
             matchToken(TokenType.RIGHT_PAREN_TOKEN);
-            return new CallExpression(ID, args);
+            varcall = new CallExpression(ID, args);
         } 
         else if (checkToken(TokenType.LEFT_BRACKET_TOKEN)) {
             matchToken(TokenType.LEFT_BRACKET_TOKEN);
@@ -1027,7 +1044,7 @@ public class CMinusParser implements Parser {
             || checkToken(TokenType.RIGHT_PAREN_TOKEN) 
             || checkToken(TokenType.RIGHT_BRACKET_TOKEN) 
             || checkToken(TokenType.COMMA_TOKEN)) {
-            return ID;
+            varcall = ID;
         }
         
         return varcall;
