@@ -1,9 +1,12 @@
 /* insertion sort */
 int insertionSort ( int inputArray[], int arrayLength )
 { 
+    int j[9];
+
     while(i < arrayLength){
         int j;
         j = i;
+        i = 2 + 3;
     }
 
     return inputArray;

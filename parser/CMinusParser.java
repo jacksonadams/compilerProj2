@@ -77,7 +77,7 @@ public class CMinusParser implements Parser {
     private CMinusScanner scanner;
     public Program program;
     public HashMap < TokenType, String > ops = new HashMap < TokenType, String > ();
-    public String INDENT = "  ";
+    public String INDENT = "    ";
 
     public CMinusParser(CMinusScanner inScanner) throws Exception {
         scanner = inScanner;
@@ -113,9 +113,9 @@ public class CMinusParser implements Parser {
 
     /* 17 classes */
     public class Program {
-        public ArrayList < Decl > decls;
+        public ArrayList<Decl> decls;
 
-        public Program(ArrayList < Decl > decls) {
+        public Program(ArrayList<Decl> decls) {
             this.decls = decls;
         }
 
@@ -157,7 +157,8 @@ public class CMinusParser implements Parser {
         }
 
         void print(String parentSpace) {
-            this.name.print(parentSpace + INDENT + "int ");
+            System.out.println(parentSpace + INDENT + "int");
+            this.name.print(parentSpace + INDENT + " ");
         }
     }
 
@@ -205,7 +206,7 @@ public class CMinusParser implements Parser {
         }
 
         void print(String parentSpace) {
-            this.statement.print(parentSpace + INDENT);
+            this.statement.print(parentSpace);
         }
     }
 
@@ -412,8 +413,6 @@ public class CMinusParser implements Parser {
         // first(program) = {void, int}
         // follow(program) = {$}
 
-        // Program returnProgram = new Program();
-
         ArrayList < Decl > declList = new ArrayList < Decl > ();
 
         // check if next token is in first set
@@ -453,6 +452,8 @@ public class CMinusParser implements Parser {
             String name = (String) temp.getData();
 
             decl = parseDecl2(returnType, name);
+        } else {
+            throw new Exception("Error: parseDecl() expects int or void.");
         }
 
         return decl;
@@ -483,25 +484,21 @@ public class CMinusParser implements Parser {
         if (checkToken(TokenType.SEMI_TOKEN)) {
             matchToken(TokenType.SEMI_TOKEN);
 
-            VarExpression
-            var = new VarExpression(name);
+            VarExpression var = new VarExpression(name);
             decl2 = new VarDecl(var);
         } else if (checkToken(TokenType.LEFT_BRACKET_TOKEN)) {
             matchToken(TokenType.LEFT_BRACKET_TOKEN);
 
             temp = matchToken(TokenType.NUM_TOKEN);
             Expression value = new NumExpression((int) temp.getData());
-            VarExpression
-            var = new VarExpression(name, value);
+            VarExpression var = new VarExpression(name, value);
             decl2 = new VarDecl(var);
             matchToken(TokenType.RIGHT_BRACKET_TOKEN);
         } else if (checkToken(TokenType.LEFT_PAREN_TOKEN)) {
-            VarExpression
-            var = new VarExpression(name);
-            decl2 = parseFunDecl(returnType,
-                var);
+            VarExpression var = new VarExpression(name);
+            decl2 = parseFunDecl(returnType, var);
         } else {
-            throw new Exception("Syntax error: Was expecting ; [ or (");
+            throw new Exception("Error: parseDecl2 expects ; [ or (");
         }
 
         return decl2;
@@ -519,18 +516,16 @@ public class CMinusParser implements Parser {
             matchToken(TokenType.LEFT_BRACKET_TOKEN);
             temp = matchToken(TokenType.NUM_TOKEN);
             Expression index = new NumExpression((int) temp.getData());
-            VarExpression
-            var = new VarExpression(name, index);
+            VarExpression var = new VarExpression(name, index);
             varDecl = new VarDecl(var);
             matchToken(TokenType.RIGHT_BRACKET_TOKEN);
             matchToken(TokenType.SEMI_TOKEN);
         } else if (checkToken(TokenType.SEMI_TOKEN)) {
-            VarExpression
-            var = new VarExpression(name);
+            VarExpression var = new VarExpression(name);
             varDecl = new VarDecl(var);
             matchToken(TokenType.SEMI_TOKEN);
         } else {
-            throw new Exception("Syntax error: was expecting ; or [");
+            throw new Exception("Error: parseVarDecl expects ; or [");
         }
 
         return varDecl;
@@ -547,18 +542,18 @@ public class CMinusParser implements Parser {
         } else if (checkToken(TokenType.VOID_TOKEN)) {
             matchToken(TokenType.VOID_TOKEN);
         } else {
-            throw new Exception("Syntax error: was expecting params or void");
+            throw new Exception("Error: parseParams expects int or void");
         }
 
         return params;
     }
 
-    private ArrayList < Param > parseParamList() {
+    private ArrayList<Param> parseParamList() {
         /* param-list → param {, param}
          * First(params-list) → { int }
          * Follow(param-list) → { ) }
          */
-        ArrayList < Param > paramList = new ArrayList < Param > ();
+        ArrayList<Param> paramList = new ArrayList<Param>();
 
         Param param = parseParam();
         paramList.add(param);
@@ -589,12 +584,10 @@ public class CMinusParser implements Parser {
             matchToken(TokenType.LEFT_BRACKET_TOKEN);
             matchToken(TokenType.RIGHT_BRACKET_TOKEN);
 
-            // Replace this once params can capture array variables
             VarExpression var = new VarExpression(name, true);
             param = new Param(var);
         } else {
-            VarExpression
-            var = new VarExpression(name);
+            VarExpression var = new VarExpression(name);
             param = new Param(var);
         }
 
@@ -608,19 +601,19 @@ public class CMinusParser implements Parser {
          */
 
         matchToken(TokenType.LEFT_BRACE_TOKEN);
-        ArrayList < Decl > localDecls = parseLocalDecls();
-        ArrayList < Statement > stmtList = parseStmtList();
+        ArrayList<Decl> localDecls = parseLocalDecls();
+        ArrayList<Statement> stmtList = parseStmtList();
         matchToken(TokenType.RIGHT_BRACE_TOKEN);
 
         return new CompoundStmt(localDecls, stmtList);
     }
 
-    private ArrayList < Decl > parseLocalDecls() throws Exception {
+    private ArrayList<Decl> parseLocalDecls() throws Exception {
         /* local-declarations → {int ID var-decl}
          * First(local-declarations) → { ε, int }
          * Follow(local-declarations) → { “}”, ID, NUM, (, ;, {, if, while, return }
          */
-        ArrayList < Decl > localDecls = new ArrayList < Decl > ();
+        ArrayList <Decl> localDecls = new ArrayList < Decl > ();
         Token temp;
 
         while (checkToken(TokenType.INT_TOKEN)) {
@@ -633,12 +626,12 @@ public class CMinusParser implements Parser {
 
         return localDecls;
     }
-    private ArrayList < Statement > parseStmtList() throws Exception {
+    private ArrayList<Statement> parseStmtList() throws Exception {
         /* statement-list → {statement}
          * First(statement-list) → { ε. ID, NUM, (, ;, {, if, while, return }
          * Follow(statement-list) → { “}” }
          */
-        ArrayList < Statement > SL = new ArrayList < Statement > ();
+        ArrayList<Statement> SL = new ArrayList<Statement>();
 
         while (checkToken(TokenType.IDENT_TOKEN) ||
             checkToken(TokenType.NUM_TOKEN) ||
@@ -673,6 +666,8 @@ public class CMinusParser implements Parser {
             S = parseIterationStmt();
         } else if (checkToken(TokenType.RETURN_TOKEN)) {
             S = parseReturnStmt();
+        } else {
+            throw new Exception("Error: parseStatement expects beginning of statement.");
         }
 
         return S;
@@ -690,6 +685,8 @@ public class CMinusParser implements Parser {
             matchToken(TokenType.SEMI_TOKEN);
         } else if (checkToken(TokenType.SEMI_TOKEN)) {
             matchToken(TokenType.SEMI_TOKEN);
+        } else {
+            throw new Exception("Error: parseExpressionStmt expected ID, NUM, (, or ;");
         }
 
         return ES;
@@ -776,8 +773,6 @@ public class CMinusParser implements Parser {
          * Follow(expression’) → { ;, ), ], “,” }
          */
         Expression E2 = null;
-        /// int[] myVar;
-        //myVar[7 < 1] = 3;
 
         if (checkToken(TokenType.ASSIGN_TOKEN)) {
             matchToken(TokenType.ASSIGN_TOKEN);
@@ -791,13 +786,12 @@ public class CMinusParser implements Parser {
 
             VarExpression LHS = new VarExpression(ID, index);
             Expression E3 = parseExpression3(LHS);
+
+            // EDIT : not too sure about these lines
+            E2 = LHS;
             if (E3 != null) {
                 E2 = E3;
             }
-
-            /*
-             * Do something with all these expressions
-             */
         } else if (checkToken(TokenType.LEFT_PAREN_TOKEN)) {
             E2 = parseVarCall(new VarExpression(ID));
         } else if (checkToken(TokenType.MULT_TOKEN) || checkToken(TokenType.DIVIDE_TOKEN) || checkToken(TokenType.PLUS_TOKEN) || checkToken(TokenType.MINUS_TOKEN) || checkToken(TokenType.LESS_EQUAL_TOKEN) || checkToken(TokenType.LESS_TOKEN) || checkToken(TokenType.GREATER_TOKEN) || checkToken(TokenType.GREATER_EQUAL_TOKEN) || checkToken(TokenType.EQUAL_TOKEN) || checkToken(TokenType.NOT_EQUAL_TOKEN) || checkToken(TokenType.IDENT_TOKEN) || checkToken(TokenType.NUM_TOKEN)) {
