@@ -966,12 +966,12 @@ public class CMinusParser implements Parser {
         return F;
     }
     
-    private CallExpression parseVarCall(VarExpression ID){ 
+    private Expression parseVarCall(VarExpression ID){ 
         /* varcall → “(“ args “)” | “[“ expression “]” | ε
          * First(varcall) → { (, [, ε }
          * Follow(varcall) → { *, /, +, -, <, >, =, !, ;, ), ], “,”, *, /, +, - }
          */
-        CallExpression varCall = null;
+        Expression varCall = null;
 
         if(checkToken(TokenType.LEFT_PAREN_TOKEN)){
             matchToken(TokenType.LEFT_PAREN_TOKEN);
@@ -986,6 +986,8 @@ public class CMinusParser implements Parser {
             matchToken(TokenType.LEFT_BRACKET_TOKEN);
 
             Expression E = parseExpression();
+
+            matchToken(TokenType.RIGHT_BRACKET_TOKEN);
         }
 
 
@@ -1016,8 +1018,14 @@ public class CMinusParser implements Parser {
         ArrayList<Expression> argList = new ArrayList<Expression>();
 
         Expression E = parseExpression();
-        
-        
+        argList.add(E);
+
+        while(checkToken(TokenType.COMMA_TOKEN)){
+            matchToken(TokenType.COMMA_TOKEN);
+            
+            E = parseExpression();
+            argList.add(E);
+        }
         
         return argList;
     }
