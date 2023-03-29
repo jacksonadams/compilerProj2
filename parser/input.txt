@@ -7,7 +7,7 @@ int gcd (int u, int v)
     else return gcd (v, u - u / v * v);
 }
 
-void main()
+void main(void)
 {
     int x;
     int y;
