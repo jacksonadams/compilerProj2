@@ -833,7 +833,8 @@ public class CMinusParser implements Parser {
         } 
         else if (checkToken(TokenType.SEMI_TOKEN) 
             || checkToken(TokenType.RIGHT_PAREN_TOKEN) 
-            || checkToken(TokenType.COMMA_TOKEN)) {
+            || checkToken(TokenType.COMMA_TOKEN)
+            || checkToken(TokenType.RIGHT_BRACKET_TOKEN)) {
             return new VarExpression(ID);
         } 
         else {
