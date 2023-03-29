@@ -77,6 +77,7 @@ public class CMinusParser implements Parser {
     private CMinusScanner scanner;
     public Program program;
     public HashMap < TokenType, String > ops = new HashMap < TokenType, String > ();
+    public String INDENT = "  ";
 
     public CMinusParser(CMinusScanner inScanner) throws Exception {
         scanner = inScanner;
@@ -138,8 +139,7 @@ public class CMinusParser implements Parser {
         }
 
         void print(String parentSpace) {
-            String mySpace = parentSpace + "  int ";
-            this.name.print(mySpace);
+            this.name.print(parentSpace + INDENT + "int ");
         }
     }
 
@@ -157,8 +157,7 @@ public class CMinusParser implements Parser {
         }
 
         void print(String parentSpace) {
-            String mySpace = parentSpace + "  ";
-            this.name.print(mySpace + "int ");
+            this.name.print(parentSpace + INDENT + "int ");
         }
     }
 
@@ -178,16 +177,16 @@ public class CMinusParser implements Parser {
         }
 
         void print(String parentSpace) {
-            String mySpace = parentSpace + "  ";
+            String mySpace = parentSpace + INDENT;
             System.out.println(mySpace + "function " + this.returnType);
             name.print(mySpace);
-            System.out.println(mySpace + "  Params (");
+            System.out.println(mySpace + INDENT + "Params (");
             if (this.params != null) {
                 for (int i = 0; i < params.size(); i++) {
                     params.get(i).print(mySpace);
                 }
             }
-            System.out.println(mySpace + "  )");
+            System.out.println(mySpace + INDENT + ")");
             content.print(mySpace);
         }
     }
@@ -206,8 +205,7 @@ public class CMinusParser implements Parser {
         }
 
         void print(String parentSpace) {
-            String mySpace = parentSpace + "  ";
-            this.statement.print(mySpace);
+            this.statement.print(parentSpace + INDENT);
         }
     }
 
@@ -222,13 +220,13 @@ public class CMinusParser implements Parser {
         }
 
         void print(String parentSpace) {
-            String mySpace = parentSpace + "  ";
+            String mySpace = parentSpace + INDENT;
             System.out.println(mySpace + "{");
             for (int i = 0; i < localDecls.size(); i++) {
-                localDecls.get(i).print(mySpace + "  ");
+                localDecls.get(i).print(mySpace);
             }
             for (int i = 0; i < statements.size(); i++) {
-                statements.get(i).print(mySpace + "  ");
+                statements.get(i).print(mySpace);
             }
             System.out.println(mySpace + "}");
         }
@@ -251,7 +249,7 @@ public class CMinusParser implements Parser {
         }
 
         void print(String parentSpace) {
-            String mySpace = "  " + parentSpace;
+            String mySpace = INDENT + parentSpace;
             System.out.println(mySpace + "if (");
             this.condition.print(mySpace);
             System.out.println(mySpace + ")");
@@ -273,7 +271,7 @@ public class CMinusParser implements Parser {
         }
 
         void print(String parentSpace) {
-            String mySpace = "  " + parentSpace;
+            String mySpace = INDENT + parentSpace;
             System.out.println(mySpace + "while");
             System.out.println(mySpace + "(");
             this.condition.print(mySpace);
@@ -292,7 +290,7 @@ public class CMinusParser implements Parser {
         }
 
         void print(String parentSpace) {
-            String mySpace = parentSpace + "  ";
+            String mySpace = INDENT + parentSpace;
             System.out.println(mySpace + "return");
             if (this.LHS != null) {
                 this.LHS.print(mySpace);
@@ -317,7 +315,7 @@ public class CMinusParser implements Parser {
         }
 
         void print(String parentSpace) {
-            String mySpace = "  " + parentSpace;
+            String mySpace = INDENT + parentSpace;
             System.out.println(mySpace + "=");
             this.LHS.print(mySpace);
             this.RHS.print(mySpace);
@@ -337,7 +335,7 @@ public class CMinusParser implements Parser {
         }
 
         void print(String parentSpace) {
-            String mySpace = parentSpace + "  ";
+            String mySpace = parentSpace + INDENT;
             System.out.println(mySpace + ops.get(this.op));
             this.LHS.print(mySpace);
             this.RHS.print(mySpace);
@@ -355,8 +353,8 @@ public class CMinusParser implements Parser {
         }
 
         void print(String parentSpace) {
-            String mySpace = "  " + parentSpace;
-            this.LHS.print(mySpace);
+            String mySpace = INDENT + parentSpace;
+            this.LHS.print(parentSpace);
             System.out.println(mySpace + "(");
             for (int i = 0; i < args.size(); i++) {
                 args.get(i).print(mySpace + "  ");
@@ -373,34 +371,37 @@ public class CMinusParser implements Parser {
         }
 
         void print(String parentSpace) {
-            System.out.println("  " + parentSpace + this.num);
+            System.out.println(INDENT + parentSpace + this.num);
         }
     }
 
     public class VarExpression extends Expression {
-        // example: x or x[10]
-        String
-        var;
+        // example: x or x[10] or x[]
+        String var;
         Expression num;
-        public VarExpression(String
-            var) {
-            this.var =
-                var;
+        Boolean blankArray = false;
+
+        public VarExpression(String var) {
+            this.var = var;
         }
-        public VarExpression(String
-            var, Expression num) {
-            this.var =
-                var;
+        public VarExpression(String var, Expression num) {
+            this.var = var;
             this.num = num;
+        }
+        public VarExpression(String var, Boolean blankArray) {
+            this.var = var;
+            this.blankArray = blankArray;
         }
 
         void print(String parentSpace) {
-            if (this.num == null) {
-                System.out.println("  " + parentSpace + this.var);
+            if (this.blankArray){
+                System.out.println(INDENT + parentSpace + this.var + "[]");
+            } else if (this.num == null) {
+                System.out.println(INDENT + parentSpace + this.var);
             } else {
-                System.out.println("  " + parentSpace + this.var+" [");
-                this.num.print("  " + parentSpace);
-                System.out.println("  " + parentSpace + "]");
+                System.out.println(INDENT + parentSpace + this.var + " [");
+                this.num.print(INDENT + parentSpace);
+                System.out.println(INDENT + parentSpace + "]");
             }
         }
     }
@@ -534,12 +535,12 @@ public class CMinusParser implements Parser {
 
         return varDecl;
     }
-    private ArrayList < Param > parseParams() throws Exception {
+    private ArrayList<Param> parseParams() throws Exception {
         /* params → param-list | void
          * First(params) → { int, void }
          * Follow(params) → { ) }
          */
-        ArrayList < Param > params = null;
+        ArrayList<Param> params = null;
 
         if (checkToken(TokenType.INT_TOKEN)) {
             params = parseParamList();
@@ -589,8 +590,7 @@ public class CMinusParser implements Parser {
             matchToken(TokenType.RIGHT_BRACKET_TOKEN);
 
             // Replace this once params can capture array variables
-            VarExpression
-            var = new VarExpression(name);
+            VarExpression var = new VarExpression(name, true);
             param = new Param(var);
         } else {
             VarExpression
@@ -699,8 +699,6 @@ public class CMinusParser implements Parser {
          * First(selection-stmt) → { if }
          * Follow(selection-stmt) → { }, ID, NUM, (, {, if, while, return, else }
          */
-        System.out.println("Parsing Selection Stmt");
-
         matchToken(TokenType.IF_TOKEN);
         matchToken(TokenType.LEFT_PAREN_TOKEN);
         Expression condition = parseExpression();
@@ -754,10 +752,8 @@ public class CMinusParser implements Parser {
          * Follow(expression) → { ;, ), ], “,”, *, /, +, - }
          */
         Expression E = null;
-        System.out.println("Parsing Expression");
         if (checkToken(TokenType.IDENT_TOKEN)) {
             String ID = (String) scanner.getNextToken().getData();
-            System.out.println("parsing ); from Expression");
             E = parseExpression2(ID);
         } else if (checkToken(TokenType.NUM_TOKEN)) {
             int num = (int) scanner.getNextToken().getData();
@@ -880,7 +876,7 @@ public class CMinusParser implements Parser {
          * Follow(additive-expression’) → { <, >, =, !, ;, ), ], “,”, *, /, +, - }
          */
         Expression LHS = inLHS;
-        Expression newLHS = parseTerm2();
+        Expression newLHS = parseTerm2(LHS);
         if (newLHS != null) {
             LHS = newLHS;
         }
@@ -905,13 +901,13 @@ public class CMinusParser implements Parser {
         }
         return LHS;
     }
-    private Expression parseTerm2() throws Exception {
+    private Expression parseTerm2(Expression inLHS) throws Exception {
         /*
          * term’ → {mulop factor}
          * First(term’) → { ε. *, / }
          * Follow(term’) → { +, - }
          */
-        Expression LHS = null;
+        Expression LHS = inLHS;
         while (checkToken(TokenType.MULT_TOKEN) || checkToken(TokenType.DIVIDE_TOKEN)) {
             TokenType op = scanner.getNextToken().getType();
             Expression RHS = parseFactor();
@@ -961,7 +957,7 @@ public class CMinusParser implements Parser {
         //{ *, /, +, -, <, >, =, !, ;, ), ], “,”, +, - }
         return varcall;
     }
-    private ArrayList < Expression > parseArgs() throws Exception {
+    private ArrayList <Expression> parseArgs() throws Exception {
         /*
          * args → arg-list | ε
          * First(args) → { ID, NUM, (, ε, *, / }
@@ -973,7 +969,7 @@ public class CMinusParser implements Parser {
         }
         return args;
     }
-    private ArrayList < Expression > parseArgList() throws Exception {
+    private ArrayList<Expression> parseArgList() throws Exception {
         /*
          * arg-list → expression {, expression}
          * First(arg-list) → { ID, NUM, (, ε, *, / }

@@ -1,14 +1,10 @@
-/* A program to perform Euclid's
-   Algorithm to compute gcd. */
+/* insertion sort */
+int insertionSort ( int inputArray[], int arrayLength )
+{ 
+    while(i < arrayLength){
+        int j;
+        j = i;
+    }
 
-int gcd (int u, int v)
-{
-    int i;
-    int j;
-    j = 0;
-    
-    while(i < high)
-        {
-            x = 0;
-        }
+    return inputArray;
 }
