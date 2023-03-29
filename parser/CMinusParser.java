@@ -4,9 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import java.io.FileWriter;
-import javax.security.auth.x500.X500Principal;
-
 import scanner.CMinusScanner;
 import scanner.Token;
 import scanner.Token.TokenType;
@@ -409,9 +406,10 @@ public class CMinusParser implements Parser {
 
     /* Parse Functions */
     public Program parseProgram() throws Exception {
-        // program -> decl {decl}
-        // first(program) = {void, int}
-        // follow(program) = {$}
+        /* program -> decl {decl}
+         * first(program) = {void, int}
+         * follow(program) = {$}
+         */
 
         ArrayList < Decl > declList = new ArrayList < Decl > ();
 
@@ -430,9 +428,10 @@ public class CMinusParser implements Parser {
     }
 
     private Decl parseDecl() throws Exception {
-        // decl -> void ID fun-decl | int ID decl'
-        // first(decl) = {void, int}
-        // follow(decl) = {$, int, void}
+        /* decl -> void ID fun-decl | int ID decl'
+         * first(decl) = {void, int}
+         * follow(decl) = {$, int, void}
+         */
 
         Decl decl = null;
 
@@ -444,15 +443,16 @@ public class CMinusParser implements Parser {
             VarExpression name = new VarExpression((String) temp.getData());
 
             decl = parseFunDecl(returnType, name);
-        } else if (checkToken(TokenType.INT_TOKEN)) {
+        } 
+        else if (checkToken(TokenType.INT_TOKEN)) {
             String returnType = "int";
             matchToken(TokenType.INT_TOKEN);
 
             Token temp = matchToken(TokenType.IDENT_TOKEN);
             String name = (String) temp.getData();
-
             decl = parseDecl2(returnType, name);
-        } else {
+        } 
+        else {
             throw new Exception("Error: parseDecl() expects int or void.");
         }
 
@@ -486,18 +486,22 @@ public class CMinusParser implements Parser {
 
             VarExpression var = new VarExpression(name);
             decl2 = new VarDecl(var);
-        } else if (checkToken(TokenType.LEFT_BRACKET_TOKEN)) {
+        } 
+        else if (checkToken(TokenType.LEFT_BRACKET_TOKEN)) {
             matchToken(TokenType.LEFT_BRACKET_TOKEN);
 
             temp = matchToken(TokenType.NUM_TOKEN);
             Expression value = new NumExpression((int) temp.getData());
             VarExpression var = new VarExpression(name, value);
             decl2 = new VarDecl(var);
+
             matchToken(TokenType.RIGHT_BRACKET_TOKEN);
-        } else if (checkToken(TokenType.LEFT_PAREN_TOKEN)) {
+        } 
+        else if (checkToken(TokenType.LEFT_PAREN_TOKEN)) {
             VarExpression var = new VarExpression(name);
             decl2 = parseFunDecl(returnType, var);
-        } else {
+        } 
+        else {
             throw new Exception("Error: parseDecl2 expects ; [ or (");
         }
 
@@ -514,17 +518,21 @@ public class CMinusParser implements Parser {
 
         if (checkToken(TokenType.LEFT_BRACKET_TOKEN)) {
             matchToken(TokenType.LEFT_BRACKET_TOKEN);
+
             temp = matchToken(TokenType.NUM_TOKEN);
             Expression index = new NumExpression((int) temp.getData());
             VarExpression var = new VarExpression(name, index);
             varDecl = new VarDecl(var);
+
             matchToken(TokenType.RIGHT_BRACKET_TOKEN);
             matchToken(TokenType.SEMI_TOKEN);
-        } else if (checkToken(TokenType.SEMI_TOKEN)) {
+        } 
+        else if (checkToken(TokenType.SEMI_TOKEN)) {
             VarExpression var = new VarExpression(name);
             varDecl = new VarDecl(var);
             matchToken(TokenType.SEMI_TOKEN);
-        } else {
+        }
+        else {
             throw new Exception("Error: parseVarDecl expects ; or [");
         }
 
@@ -539,9 +547,11 @@ public class CMinusParser implements Parser {
 
         if (checkToken(TokenType.INT_TOKEN)) {
             params = parseParamList();
-        } else if (checkToken(TokenType.VOID_TOKEN)) {
+        } 
+        else if (checkToken(TokenType.VOID_TOKEN)) {
             matchToken(TokenType.VOID_TOKEN);
-        } else {
+        } 
+        else {
             throw new Exception("Error: parseParams expects int or void");
         }
 
@@ -586,7 +596,8 @@ public class CMinusParser implements Parser {
 
             VarExpression var = new VarExpression(name, true);
             param = new Param(var);
-        } else {
+        } 
+        else {
             VarExpression var = new VarExpression(name);
             param = new Param(var);
         }
@@ -618,6 +629,7 @@ public class CMinusParser implements Parser {
 
         while (checkToken(TokenType.INT_TOKEN)) {
             matchToken(TokenType.INT_TOKEN);
+
             temp = matchToken(TokenType.IDENT_TOKEN);
             String name = (String) temp.getData();
             Decl decl = parseVarDecl(name);
@@ -658,15 +670,20 @@ public class CMinusParser implements Parser {
             checkToken(TokenType.LEFT_PAREN_TOKEN) ||
             checkToken(TokenType.SEMI_TOKEN)) {
             S = parseExpressionStmt();
-        } else if (checkToken(TokenType.LEFT_BRACE_TOKEN)) {
+        } 
+        else if (checkToken(TokenType.LEFT_BRACE_TOKEN)) {
             S = parseCompoundStmt();
-        } else if (checkToken(TokenType.IF_TOKEN)) {
+        } 
+        else if (checkToken(TokenType.IF_TOKEN)) {
             S = parseSelectionStmt();
-        } else if (checkToken(TokenType.WHILE_TOKEN)) {
+        } 
+        else if (checkToken(TokenType.WHILE_TOKEN)) {
             S = parseIterationStmt();
-        } else if (checkToken(TokenType.RETURN_TOKEN)) {
+        } 
+        else if (checkToken(TokenType.RETURN_TOKEN)) {
             S = parseReturnStmt();
-        } else {
+        } 
+        else {
             throw new Exception("Error: parseStatement expects beginning of statement.");
         }
 
@@ -679,13 +696,17 @@ public class CMinusParser implements Parser {
          */
         ExpressionStmt ES = null;
 
-        if (checkToken(TokenType.IDENT_TOKEN) || checkToken(TokenType.NUM_TOKEN) || checkToken(TokenType.LEFT_PAREN_TOKEN)) {
+        if (checkToken(TokenType.IDENT_TOKEN) 
+        || checkToken(TokenType.NUM_TOKEN) 
+        || checkToken(TokenType.LEFT_PAREN_TOKEN)) {
             Expression E = parseExpression();
             ES = new ExpressionStmt(E);
             matchToken(TokenType.SEMI_TOKEN);
-        } else if (checkToken(TokenType.SEMI_TOKEN)) {
+        } 
+        else if (checkToken(TokenType.SEMI_TOKEN)) {
             matchToken(TokenType.SEMI_TOKEN);
-        } else {
+        } 
+        else {
             throw new Exception("Error: parseExpressionStmt expected ID, NUM, (, or ;");
         }
 
@@ -701,11 +722,13 @@ public class CMinusParser implements Parser {
         Expression condition = parseExpression();
         matchToken(TokenType.RIGHT_PAREN_TOKEN);
         Statement ifSequence = parseStatement();
+
         if (checkToken(TokenType.ELSE_TOKEN)) {
             matchToken(TokenType.ELSE_TOKEN);
             Statement elseSequence = parseStatement();
             return new SelectionStmt(condition, ifSequence, elseSequence);
         }
+        
         return new SelectionStmt(condition, ifSequence);
     }
     private IterationStmt parseIterationStmt() throws Exception {
@@ -724,8 +747,7 @@ public class CMinusParser implements Parser {
     }
 
     private ReturnStmt parseReturnStmt() throws Exception {
-        /*
-         * return-stmt → return [expression] ;
+        /* return-stmt → return [expression] ;
          * First(return-stmt) → { return }
          * Follow(return-stmt) → { }, ID, NUM, (, *, /, ;, {, if, while, return, else }
          */
@@ -733,38 +755,46 @@ public class CMinusParser implements Parser {
         ReturnStmt RS = null;
 
         matchToken(TokenType.RETURN_TOKEN);
-        if (checkToken(TokenType.IDENT_TOKEN) || checkToken(TokenType.NUM_TOKEN) || checkToken(TokenType.LEFT_PAREN_TOKEN)) {
+        
+        if (checkToken(TokenType.IDENT_TOKEN) 
+        || checkToken(TokenType.NUM_TOKEN) 
+        || checkToken(TokenType.LEFT_PAREN_TOKEN)) {
             RS = new ReturnStmt(parseExpression());
         }
+
         matchToken(TokenType.SEMI_TOKEN);
 
         return RS;
     }
 
     private Expression parseExpression() throws Exception {
-        /*
-         * expression → ID expression’ | NUM simple-expression’ | (expression)
-         * simple-expression’
+        /* expression → ID expression’ | NUM simple-expression’ | (expression) simple-expression’
          * First(expression) → { ID, NUM, (}
          * Follow(expression) → { ;, ), ], “,”, *, /, +, - }
          */
+
         Expression E = null;
+
         if (checkToken(TokenType.IDENT_TOKEN)) {
             String ID = (String) scanner.getNextToken().getData();
             E = parseExpression2(ID);
-        } else if (checkToken(TokenType.NUM_TOKEN)) {
+        } 
+        else if (checkToken(TokenType.NUM_TOKEN)) {
             int num = (int) scanner.getNextToken().getData();
             E = parseSimpleExpr2(new NumExpression(num));
             if (E == null) {
                 return new NumExpression(num);
             }
-        } else if (checkToken(TokenType.LEFT_PAREN_TOKEN)) {
+        } 
+        else if (checkToken(TokenType.LEFT_PAREN_TOKEN)) {
             matchToken(TokenType.LEFT_PAREN_TOKEN);
             E = parseExpression();
             matchToken(TokenType.RIGHT_PAREN_TOKEN);
-        } else {
+        } 
+        else {
             throw new Exception("Syntax error: expression expects ID, NUM, or (.");
         }
+        
         return E;
     }
     private Expression parseExpression2(String ID) throws Exception {
@@ -779,7 +809,8 @@ public class CMinusParser implements Parser {
             VarExpression LHS = new VarExpression(ID);
             Expression RHS = parseExpression();
             E2 = new AssignExpression(LHS, RHS);
-        } else if (checkToken(TokenType.LEFT_BRACKET_TOKEN)) {
+        } 
+        else if (checkToken(TokenType.LEFT_BRACKET_TOKEN)) {
             matchToken(TokenType.LEFT_BRACKET_TOKEN);
             Expression index = parseExpression();
             matchToken(TokenType.RIGHT_BRACKET_TOKEN);
@@ -792,13 +823,30 @@ public class CMinusParser implements Parser {
             if (E3 != null) {
                 E2 = E3;
             }
-        } else if (checkToken(TokenType.LEFT_PAREN_TOKEN)) {
+        } 
+        else if (checkToken(TokenType.LEFT_PAREN_TOKEN)) {
             E2 = parseVarCall(new VarExpression(ID));
-        } else if (checkToken(TokenType.MULT_TOKEN) || checkToken(TokenType.DIVIDE_TOKEN) || checkToken(TokenType.PLUS_TOKEN) || checkToken(TokenType.MINUS_TOKEN) || checkToken(TokenType.LESS_EQUAL_TOKEN) || checkToken(TokenType.LESS_TOKEN) || checkToken(TokenType.GREATER_TOKEN) || checkToken(TokenType.GREATER_EQUAL_TOKEN) || checkToken(TokenType.EQUAL_TOKEN) || checkToken(TokenType.NOT_EQUAL_TOKEN) || checkToken(TokenType.IDENT_TOKEN) || checkToken(TokenType.NUM_TOKEN)) {
+        } 
+        else if (checkToken(TokenType.MULT_TOKEN) 
+        || checkToken(TokenType.DIVIDE_TOKEN) 
+        || checkToken(TokenType.PLUS_TOKEN) 
+        || checkToken(TokenType.MINUS_TOKEN) 
+        || checkToken(TokenType.LESS_EQUAL_TOKEN) 
+        || checkToken(TokenType.LESS_TOKEN) 
+        || checkToken(TokenType.GREATER_TOKEN) 
+        || checkToken(TokenType.GREATER_EQUAL_TOKEN) 
+        || checkToken(TokenType.EQUAL_TOKEN) 
+        || checkToken(TokenType.NOT_EQUAL_TOKEN) 
+        || checkToken(TokenType.IDENT_TOKEN) 
+        || checkToken(TokenType.NUM_TOKEN)) {
             E2 = parseSimpleExpr2(new VarExpression(ID));
-        } else if (checkToken(TokenType.SEMI_TOKEN) || checkToken(TokenType.RIGHT_PAREN_TOKEN) || checkToken(TokenType.COMMA_TOKEN)) {
+        } 
+        else if (checkToken(TokenType.SEMI_TOKEN) 
+        || checkToken(TokenType.RIGHT_PAREN_TOKEN) 
+        || checkToken(TokenType.COMMA_TOKEN)) {
             return new VarExpression(ID);
-        } else {
+        } 
+        else {
             throw new Exception("Syntax error: expression' expects = [ or (.");
         }
 
@@ -816,7 +864,8 @@ public class CMinusParser implements Parser {
 
             Expression RHS = parseExpression();
             E3 = new AssignExpression(LHS, RHS);
-        } else if (checkToken(TokenType.MULT_TOKEN) ||
+        } 
+        else if (checkToken(TokenType.MULT_TOKEN) ||
             checkToken(TokenType.DIVIDE_TOKEN) ||
             checkToken(TokenType.PLUS_TOKEN) ||
             checkToken(TokenType.MINUS_TOKEN) ||
@@ -832,143 +881,188 @@ public class CMinusParser implements Parser {
         return E3;
     }
     private Expression parseSimpleExpr2(Expression LHS) throws Exception {
-        /*
-         * simple-expression’ → additive-expression’ [relop additive expression]
+        /* simple-expression’ → additive-expression’ [relop additive expression]
          * First(simple-expression’) → { ε, *, /, +, - }
          * Follow(simple-expression’) → { ;, ), ], “,”, *, /, +, - }
          */
         Expression SE2 = LHS;
-        if (checkToken(TokenType.MULT_TOKEN) || checkToken(TokenType.DIVIDE_TOKEN) || checkToken(TokenType.PLUS_TOKEN) || checkToken(TokenType.MINUS_TOKEN)) {
+        
+        if (checkToken(TokenType.MULT_TOKEN) 
+        || checkToken(TokenType.DIVIDE_TOKEN) 
+        || checkToken(TokenType.PLUS_TOKEN) 
+        || checkToken(TokenType.MINUS_TOKEN)) {
             SE2 = parseAdditiveExpr2(LHS);
         }
-        if (checkToken(TokenType.GREATER_EQUAL_TOKEN) || checkToken(TokenType.GREATER_TOKEN) || checkToken(TokenType.EQUAL_TOKEN) || checkToken(TokenType.NOT_EQUAL_TOKEN) || checkToken(TokenType.LESS_EQUAL_TOKEN) || checkToken(TokenType.LESS_TOKEN)) {
+        if (checkToken(TokenType.GREATER_EQUAL_TOKEN) 
+        || checkToken(TokenType.GREATER_TOKEN) 
+        || checkToken(TokenType.EQUAL_TOKEN) 
+        || checkToken(TokenType.NOT_EQUAL_TOKEN) 
+        || checkToken(TokenType.LESS_EQUAL_TOKEN) 
+        || checkToken(TokenType.LESS_TOKEN)) {
             TokenType op = scanner.getNextToken().getType();
             Expression RHS = parseAdditiveExpr();
             return new BinaryExpression(SE2, op, RHS);
         }
+        
         return SE2;
     }
     private Expression parseAdditiveExpr() throws Exception {
-        /*
-         * additive-expression → term {addop term}
+        /* additive-expression → term {addop term}
          * First(additive-expression) → { (, ID, NUM }
          * Follow(additive-expression) → { ;, ), ], “,”, *, /, +, - }
          */
+
         Expression LHS = parseTerm();
-        while (checkToken(TokenType.PLUS_TOKEN) || checkToken(TokenType.MINUS_TOKEN)) {
+        
+        while (checkToken(TokenType.PLUS_TOKEN) 
+        || checkToken(TokenType.MINUS_TOKEN)) {
             TokenType op = scanner.getNextToken().getType();
             Expression RHS = parseTerm();
             LHS = new BinaryExpression(LHS, op, RHS);
         }
+        
         return LHS;
     }
 
     private Expression parseAdditiveExpr2(Expression inLHS) throws Exception {
-        /*
-         * additive-expression’ → term’ {addop term}
+        /* additive-expression’ → term’ {addop term}
          * First(additive-expression’) → { ε, *, /, +, - }
          * Follow(additive-expression’) → { <, >, =, !, ;, ), ], “,”, *, /, +, - }
          */
+
         Expression LHS = inLHS;
         Expression newLHS = parseTerm2(LHS);
+        
         if (newLHS != null) {
             LHS = newLHS;
         }
-        while (checkToken(TokenType.PLUS_TOKEN) || checkToken(TokenType.MINUS_TOKEN)) {
+        while (checkToken(TokenType.PLUS_TOKEN) 
+        || checkToken(TokenType.MINUS_TOKEN)) {
             TokenType op = scanner.getNextToken().getType();
             Expression RHS = parseTerm();
             LHS = new BinaryExpression(LHS, op, RHS);
         }
+        
         return LHS;
     }
     private Expression parseTerm() throws Exception {
-        /*
-         * term → factor {mulop factor}
+        /* term → factor {mulop factor}
          * First(term) → { (, ID, NUM }
          * Follow(term) → { +, -, <, >, =, !, ;, ), ], “,”, *, /, +, - }
          */
+
         Expression LHS = parseFactor();
-        while (checkToken(TokenType.MULT_TOKEN) || checkToken(TokenType.DIVIDE_TOKEN)) {
+        
+        while (checkToken(TokenType.MULT_TOKEN) 
+        || checkToken(TokenType.DIVIDE_TOKEN)) {
             TokenType op = scanner.getNextToken().getType();
             Expression RHS = parseFactor();
             LHS = new BinaryExpression(LHS, op, RHS);
         }
+        
         return LHS;
     }
     private Expression parseTerm2(Expression inLHS) throws Exception {
-        /*
-         * term’ → {mulop factor}
+        /* term’ → {mulop factor}
          * First(term’) → { ε. *, / }
          * Follow(term’) → { +, - }
          */
+
         Expression LHS = inLHS;
-        while (checkToken(TokenType.MULT_TOKEN) || checkToken(TokenType.DIVIDE_TOKEN)) {
+        
+        while (checkToken(TokenType.MULT_TOKEN) 
+        || checkToken(TokenType.DIVIDE_TOKEN)) {
             TokenType op = scanner.getNextToken().getType();
             Expression RHS = parseFactor();
             LHS = new BinaryExpression(LHS, op, RHS);
         }
+        
         return LHS;
     }
     private Expression parseFactor() throws Exception {
-        /*
-         * factor → “(” expression “)” | ID varcall | NUM
+        /* factor → “(” expression “)” | ID varcall | NUM
          * First(factor) → { (, ID, NUM }
          * Follow(factor) → { *, /, +, -, <, >, =, !, ;, ), ], “,”, *, /, +, - }
          */
+
         Expression F = null;
+        
         if (checkToken(TokenType.LEFT_PAREN_TOKEN)) {
             matchToken(TokenType.LEFT_PAREN_TOKEN);
             F = parseExpression();
             matchToken(TokenType.RIGHT_PAREN_TOKEN);
-        } else if (checkToken(TokenType.IDENT_TOKEN)) {
+        } 
+        else if (checkToken(TokenType.IDENT_TOKEN)) {
             String ID = (String) scanner.getNextToken().getData();
             F = parseVarCall(new VarExpression(ID));
-        } else if (checkToken(TokenType.NUM_TOKEN)) {
+        } 
+        else if (checkToken(TokenType.NUM_TOKEN)) {
             int NUM = (int) scanner.getNextToken().getData();
             return new NumExpression(NUM);
         }
+        
         return F;
     }
     private Expression parseVarCall(VarExpression ID) throws Exception {
-        /*
-         * varcall → “(“ args “)” | “[“ expression “]” | ε
+        /* varcall → “(“ args “)” | “[“ expression “]” | ε
          * First(varcall) → { (, [, ε }
          * Follow(varcall) → { *, /, +, -, <, >, =, !, ;, ), ], “,”, *, /, +, - }
          */
+
         Expression varcall = null;
+        
         if (checkToken(TokenType.LEFT_PAREN_TOKEN)) {
             matchToken(TokenType.LEFT_PAREN_TOKEN);
             ArrayList < Expression > args = parseArgs();
             matchToken(TokenType.RIGHT_PAREN_TOKEN);
             return new CallExpression(ID, args);
-        } else if (checkToken(TokenType.LEFT_BRACKET_TOKEN)) {
+        } 
+        else if (checkToken(TokenType.LEFT_BRACKET_TOKEN)) {
             matchToken(TokenType.LEFT_BRACKET_TOKEN);
             varcall = parseExpression();
             matchToken(TokenType.RIGHT_BRACKET_TOKEN);
-        } else if (checkToken(TokenType.MULT_TOKEN) || checkToken(TokenType.DIVIDE_TOKEN) || checkToken(TokenType.PLUS_TOKEN) || checkToken(TokenType.MINUS_TOKEN) || checkToken(TokenType.LESS_TOKEN) || checkToken(TokenType.GREATER_TOKEN) || checkToken(TokenType.LESS_EQUAL_TOKEN) || checkToken(TokenType.GREATER_EQUAL_TOKEN) || checkToken(TokenType.EQUAL_TOKEN) || checkToken(TokenType.NOT_EQUAL_TOKEN) || checkToken(TokenType.SEMI_TOKEN) || checkToken(TokenType.RIGHT_PAREN_TOKEN) || checkToken(TokenType.RIGHT_BRACKET_TOKEN) || checkToken(TokenType.COMMA_TOKEN)) {
+        } 
+        else if (checkToken(TokenType.MULT_TOKEN) 
+        || checkToken(TokenType.DIVIDE_TOKEN) 
+        || checkToken(TokenType.PLUS_TOKEN) 
+        || checkToken(TokenType.MINUS_TOKEN) 
+        || checkToken(TokenType.LESS_TOKEN) 
+        || checkToken(TokenType.GREATER_TOKEN) 
+        || checkToken(TokenType.LESS_EQUAL_TOKEN) 
+        || checkToken(TokenType.GREATER_EQUAL_TOKEN) 
+        || checkToken(TokenType.EQUAL_TOKEN) 
+        || checkToken(TokenType.NOT_EQUAL_TOKEN) 
+        || checkToken(TokenType.SEMI_TOKEN) 
+        || checkToken(TokenType.RIGHT_PAREN_TOKEN) 
+        || checkToken(TokenType.RIGHT_BRACKET_TOKEN) 
+        || checkToken(TokenType.COMMA_TOKEN)) {
             return ID;
         }
-        //{ *, /, +, -, <, >, =, !, ;, ), ], “,”, +, - }
+        
         return varcall;
     }
     private ArrayList <Expression> parseArgs() throws Exception {
-        /*
-         * args → arg-list | ε
+        /* args → arg-list | ε
          * First(args) → { ID, NUM, (, ε, *, / }
          * Follow(args) → { ) }
          */
+
         ArrayList < Expression > args = new ArrayList < Expression > ();
-        if (checkToken(TokenType.IDENT_TOKEN) || checkToken(TokenType.NUM_TOKEN) || checkToken(TokenType.LEFT_PAREN_TOKEN)) {
+        
+        if (checkToken(TokenType.IDENT_TOKEN) 
+        || checkToken(TokenType.NUM_TOKEN) 
+        || checkToken(TokenType.LEFT_PAREN_TOKEN)) {
             args = parseArgList();
         }
+        
         return args;
     }
     private ArrayList<Expression> parseArgList() throws Exception {
-        /*
-         * arg-list → expression {, expression}
+        /* arg-list → expression {, expression}
          * First(arg-list) → { ID, NUM, (, ε, *, / }
          * Follow(arg-list) → { ) }
          */
+        
         ArrayList < Expression > argList = new ArrayList < Expression > ();
 
         Expression nextExp = parseExpression();
