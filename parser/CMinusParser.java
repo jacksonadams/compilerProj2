@@ -594,9 +594,12 @@ public class CMinusParser implements Parser {
             VarExpression var = new VarExpression(name, true);
             param = new Param(var);
         } 
-        else {
+        else if (checkToken(TokenType.COMMA_TOKEN) || checkToken(TokenType.RIGHT_PAREN_TOKEN)){
             VarExpression var = new VarExpression(name);
             param = new Param(var);
+        }
+        else {
+            throw new Exception("Error: parseParam expected ( ) or ,");
         }
 
         return param;
@@ -608,16 +611,12 @@ public class CMinusParser implements Parser {
          * Follow(compound-stmt) → { $, void, int, “}”, ID, NUM, (, *, /, +, -, ;, {, if, while, return, else }
          */
 
-        CompoundStmt CS = null;
-
         matchToken(TokenType.LEFT_BRACE_TOKEN);
         ArrayList<Decl> localDecls = parseLocalDecls();
         ArrayList<Statement> stmtList = parseStmtList();
         matchToken(TokenType.RIGHT_BRACE_TOKEN);
 
-        CS = new CompoundStmt(localDecls, stmtList);
-
-        return CS;
+        return new CompoundStmt(localDecls, stmtList);
     }
 
     private ArrayList<Decl> parseLocalDecls() throws Exception {
@@ -630,7 +629,6 @@ public class CMinusParser implements Parser {
 
         while (checkToken(TokenType.INT_TOKEN)) {
             matchToken(TokenType.INT_TOKEN);
-
             temp = matchToken(TokenType.IDENT_TOKEN);
             String name = (String) temp.getData();
             Decl decl = parseVarDecl(name);
@@ -731,7 +729,7 @@ public class CMinusParser implements Parser {
             Statement elseSequence = parseStatement();
             SS = new SelectionStmt(condition, ifSequence, elseSequence);
         }
-        else{
+        else {
             SS = new SelectionStmt(condition, ifSequence);
         }
         
@@ -769,6 +767,8 @@ public class CMinusParser implements Parser {
         || checkToken(TokenType.NUM_TOKEN) 
         || checkToken(TokenType.LEFT_PAREN_TOKEN)) {
             RS = new ReturnStmt(parseExpression());
+        } else if (!checkToken(TokenType.SEMI_TOKEN)){
+            throw new Exception("Error: return statement expected ID, NUM, ( or ;");
         }
 
         matchToken(TokenType.SEMI_TOKEN);
@@ -853,7 +853,8 @@ public class CMinusParser implements Parser {
         } 
         else if (checkToken(TokenType.SEMI_TOKEN) 
             || checkToken(TokenType.RIGHT_PAREN_TOKEN) 
-            || checkToken(TokenType.COMMA_TOKEN)) {
+            || checkToken(TokenType.COMMA_TOKEN)
+            || checkToken(TokenType.RIGHT_BRACKET_TOKEN)) {
             E2 = new VarExpression(ID);
         } 
         else {
@@ -888,6 +889,12 @@ public class CMinusParser implements Parser {
             || checkToken(TokenType.NOT_EQUAL_TOKEN)) {
             E3 = parseSimpleExpr2(LHS);
         }
+        else if (!(checkToken(TokenType.SEMI_TOKEN) 
+            || checkToken(TokenType.RIGHT_PAREN_TOKEN) 
+            || checkToken(TokenType.COMMA_TOKEN)
+            || checkToken(TokenType.RIGHT_BRACKET_TOKEN))) {
+            throw new Exception("Error: expression'' expects an operator.");
+        }
 
         return E3;
     }
@@ -914,6 +921,13 @@ public class CMinusParser implements Parser {
             TokenType op = scanner.getNextToken().getType();
             Expression RHS = parseAdditiveExpr();
             SE2 = new BinaryExpression(SE2, op, RHS);
+        }
+
+        if(!(checkToken(TokenType.SEMI_TOKEN) 
+        || checkToken(TokenType.RIGHT_PAREN_TOKEN) 
+        || checkToken(TokenType.RIGHT_BRACKET_TOKEN)
+        || checkToken(TokenType.COMMA_TOKEN))){
+            throw new Exception("Error: simple-expression' expected ; ) ] or ,");
         }
         
         return SE2;
@@ -1012,6 +1026,9 @@ public class CMinusParser implements Parser {
             int NUM = (int) scanner.getNextToken().getData();
             F = new NumExpression(NUM);
         }
+        else {
+            throw new Exception("Error: parseFactor expected ( ID or NUM");
+        }
         
         return F;
     }
@@ -1050,6 +1067,9 @@ public class CMinusParser implements Parser {
             || checkToken(TokenType.COMMA_TOKEN)) {
             varcall = ID;
         }
+        else {
+            throw new Exception("Error: parseVarCall expected ( [ ] ) ; , or an operator.");
+        }
         
         return varcall;
     }
@@ -1065,6 +1085,8 @@ public class CMinusParser implements Parser {
         || checkToken(TokenType.NUM_TOKEN) 
         || checkToken(TokenType.LEFT_PAREN_TOKEN)) {
             args = parseArgList();
+        } else if (!checkToken(TokenType.RIGHT_PAREN_TOKEN)){
+            throw new Exception("Error: parseArgs expects )");
         }
         
         return args;
