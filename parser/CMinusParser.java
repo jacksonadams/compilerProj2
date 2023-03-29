@@ -180,8 +180,8 @@ public class CMinusParser implements Parser {
         }
 
         void print(String parentSpace) {
-            String mySpace = parentSpace + "  ";
-            this.name.print(mySpace + "int ");
+            String mySpace = parentSpace + "  int ";
+            this.name.print(mySpace);
         }
     }
 
@@ -192,15 +192,11 @@ public class CMinusParser implements Parser {
 
     public class VarDecl extends Decl {
         // example: int x; or int x[10];
-
-
         public VarExpression name;
-
 
         public VarDecl(VarExpression name) {
             this.name = name;
         }
-
 
         void print(String parentSpace) {
             String mySpace = parentSpace + "  ";
@@ -247,12 +243,10 @@ public class CMinusParser implements Parser {
     public class ExpressionStmt extends Statement {
         // example: a + 3;
 
-
         public Expression statement;
         public ExpressionStmt(Expression statement) {
             this.statement = statement;
         }
-
 
         void print(String parentSpace) {
             String mySpace = parentSpace + "  ";
@@ -317,13 +311,20 @@ public class CMinusParser implements Parser {
 
     public class IterationStmt extends Statement {
         // example: while (x > 0) { }
-        public IterationStmt(Expression condition, CompoundStmt sequence) {
-
-
+        Expression condition;
+        Statement sequence;
+        public IterationStmt(Expression condition, Statement sequence) {
+            this.condition = condition;
+            this.sequence = sequence;
         }
 
-
         void print(String parentSpace) {
+            String mySpace = "  " + parentSpace;
+            System.out.println(mySpace + "while");
+            System.out.println(mySpace + "(");
+            this.condition.print(mySpace);
+            System.out.println(mySpace + ")");
+            this.sequence.print(mySpace);
         }
     }
 
@@ -399,12 +400,10 @@ public class CMinusParser implements Parser {
         VarExpression LHS;
         ArrayList<Expression> args;
 
-
         public CallExpression(VarExpression LHS, ArrayList<Expression> args) {
             this.LHS = LHS;
             this.args = args;
         }
-
 
         void print(String parentSpace) {
             String mySpace = "  " + parentSpace;
@@ -424,7 +423,6 @@ public class CMinusParser implements Parser {
             this.num = num;
         }
 
-
         void print(String parentSpace) {
             System.out.println("  " + parentSpace + this.num);
         }
@@ -433,21 +431,22 @@ public class CMinusParser implements Parser {
     public class VarExpression extends Expression {
         // example: x or x[10]
         String var;
-        int num = -1;
+        Expression num;
         public VarExpression(String var) {
             this.var = var;
         }
-        public VarExpression(String var, int num) {
+        public VarExpression(String var, Expression num) {
             this.var = var;
             this.num = num;
         }
 
-
         void print(String parentSpace) {
-            if(this.num == -1){
+            if(this.num == null){
                 System.out.println("  " + parentSpace + this.var);
             } else {
-                System.out.println("  " + parentSpace + this.var + "[" + this.num + "]");
+                System.out.println("  " + parentSpace + this.var + " [" );
+                this.num.print("  " + parentSpace);
+                System.out.println("  " + parentSpace + "]");
             }
         }
     }
@@ -505,19 +504,19 @@ public class CMinusParser implements Parser {
        return decl;
    }
 
-   private Decl parseFunDecl(String returnType, VarExpression name) throws Exception {
-       /* fun-decl → “(” params “)” compound-stmt
-        * First(fun-decl) → { ( }
-        * Follow(fun-decl) → { $, void, int, }
-        */
+    private Decl parseFunDecl(String returnType, VarExpression name) throws Exception {
+        /* fun-decl → “(” params “)” compound-stmt
+            * First(fun-decl) → { ( }
+            * Follow(fun-decl) → { $, void, int, }
+            */
 
-       matchToken(TokenType.LEFT_PAREN_TOKEN);
-       ArrayList<Param> paramList = parseParams();
-       matchToken(TokenType.RIGHT_PAREN_TOKEN);
-       CompoundStmt content = parseCompoundStmt();
+        matchToken(TokenType.LEFT_PAREN_TOKEN);
+        ArrayList<Param> paramList = parseParams();
+        matchToken(TokenType.RIGHT_PAREN_TOKEN);
+        CompoundStmt content = parseCompoundStmt();
 
-       return new FunDecl(returnType, name, paramList, content);
-   }
+        return new FunDecl(returnType, name, paramList, content);
+    }
 
 
    private Decl parseDecl2(String returnType, String name) throws Exception {
@@ -538,7 +537,7 @@ public class CMinusParser implements Parser {
             matchToken(TokenType.LEFT_BRACKET_TOKEN);
             
             temp = matchToken(TokenType.NUM_TOKEN);
-            int value = (int)temp.getData();
+            Expression value = new NumExpression((int)temp.getData());
             VarExpression var = new VarExpression(name, value);
             decl2 = new VarDecl(var);
             matchToken(TokenType.RIGHT_BRACKET_TOKEN);
@@ -562,12 +561,11 @@ public class CMinusParser implements Parser {
         Decl varDecl = null;
         Token temp;
 
-
         if(checkToken(TokenType.LEFT_BRACKET_TOKEN)){
             matchToken(TokenType.LEFT_BRACKET_TOKEN);
             temp = matchToken(TokenType.NUM_TOKEN);
-            int value = (int)temp.getData();
-            VarExpression var = new VarExpression(name, value);
+            Expression index = new NumExpression((int)temp.getData());
+            VarExpression var = new VarExpression(name, index);
             varDecl = new VarDecl(var);
             matchToken(TokenType.RIGHT_BRACKET_TOKEN);
             matchToken(TokenType.SEMI_TOKEN);
@@ -618,7 +616,6 @@ public class CMinusParser implements Parser {
             param = parseParam();
             paramList.add(param);
         }
-
 
         return paramList;
     }
@@ -693,7 +690,6 @@ public class CMinusParser implements Parser {
         */
        ArrayList<Statement> SL = new ArrayList<Statement>();
 
-
        while(checkToken(TokenType.IDENT_TOKEN)
        || checkToken(TokenType.NUM_TOKEN)
        || checkToken(TokenType.LEFT_PAREN_TOKEN)
@@ -744,11 +740,13 @@ public class CMinusParser implements Parser {
             */
         ExpressionStmt ES = null;
 
-        if(!checkToken(TokenType.SEMI_TOKEN)){
+        if(checkToken(TokenType.IDENT_TOKEN) || checkToken(TokenType.NUM_TOKEN)|| checkToken(TokenType.LEFT_PAREN_TOKEN)){
             Expression E = parseExpression();
             ES = new ExpressionStmt(E);
+            matchToken(TokenType.SEMI_TOKEN);
+        } else if (checkToken(TokenType.SEMI_TOKEN)){
+            matchToken(TokenType.SEMI_TOKEN);
         }
-        matchToken(TokenType.SEMI_TOKEN);
 
         return ES;
     }
@@ -774,17 +772,21 @@ public class CMinusParser implements Parser {
             return new SelectionStmt(condition, ifSequence);
     }
   
-   private IterationStmt parseIterationStmt(){
-       /* iteration-stmt → while “(” expression “)” statement
-        * First(iteration-stmt) → { while }
-        * Follow(iteration-stmt) → { }, ID, NUM, (, {, if, while, return, else }
-        */
-       IterationStmt IS = null;
+    private IterationStmt parseIterationStmt() throws Exception {
+        /* iteration-stmt → while “(” expression “)” statement
+            * First(iteration-stmt) → { while }
+            * Follow(iteration-stmt) → { }, ID, NUM, (, {, if, while, return, else }
+            */
 
+        matchToken(TokenType.WHILE_TOKEN);
+        matchToken(TokenType.LEFT_PAREN_TOKEN);
+        Expression condition = parseExpression();
+        matchToken(TokenType.RIGHT_PAREN_TOKEN);
+        Statement activity = parseStatement();
 
-       return IS;
-   }
-  
+        return new IterationStmt(condition, activity);
+    }
+    
     private ReturnStmt parseReturnStmt() throws Exception {
         /*
         * return-stmt → return [expression] ;
@@ -813,7 +815,6 @@ public class CMinusParser implements Parser {
          */
         Expression E = null;
         System.out.println("Parsing Expression");
- 
  
         if(checkToken(TokenType.IDENT_TOKEN)){
             String ID = (String)scanner.getNextToken().getData();
@@ -854,12 +855,14 @@ public class CMinusParser implements Parser {
         }
         else if(checkToken(TokenType.LEFT_BRACKET_TOKEN)){
             matchToken(TokenType.LEFT_BRACKET_TOKEN);
-
-            Expression E = parseExpression();
+            Expression index = parseExpression();
             matchToken(TokenType.RIGHT_BRACKET_TOKEN);
 
-            VarExpression tempE = new VarExpression(ID);
-            Expression E3 = parseExpression3(tempE);
+            VarExpression LHS = new VarExpression(ID, index);
+            Expression E3 = parseExpression3(LHS);
+            if(E3 != null){
+                E2 = E3;
+            }
 
             /*
                 * Do something with all these expressions
@@ -883,10 +886,10 @@ public class CMinusParser implements Parser {
             * First(expression’’) → {  =, ε, *, /, +, -, <, <=, >, >=, ==, !=  }
             * Follow(expression’’) → { ;, ), ], “,” }
             */
-        Expression E3 = null;
+        Expression E3 = LHS;
 
         if(checkToken(TokenType.ASSIGN_TOKEN)){
-            matchToken(TokenType.EQUAL_TOKEN);
+            matchToken(TokenType.ASSIGN_TOKEN);
 
             Expression RHS = parseExpression();
             E3 = new AssignExpression(LHS, RHS);
