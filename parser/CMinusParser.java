@@ -407,8 +407,8 @@ public class CMinusParser implements Parser {
     /* Parse Functions */
     public Program parseProgram() throws Exception {
         /* program -> decl {decl}
-         * first(program) = {void, int}
-         * follow(program) = {$}
+         * first(program) = { void, int }
+         * follow(program) = { $ }
          */
 
         ArrayList < Decl > declList = new ArrayList < Decl > ();
@@ -429,8 +429,8 @@ public class CMinusParser implements Parser {
 
     private Decl parseDecl() throws Exception {
         /* decl -> void ID fun-decl | int ID decl'
-         * first(decl) = {void, int}
-         * follow(decl) = {$, int, void}
+         * first(decl) = { void, int }
+         * follow(decl) = { $, int, void }
          */
 
         Decl decl = null;
@@ -462,7 +462,7 @@ public class CMinusParser implements Parser {
     private Decl parseFunDecl(String returnType, VarExpression name) throws Exception {
         /* fun-decl → “(” params “)” compound-stmt
          * First(fun-decl) → { ( }
-         * Follow(fun-decl) → { $, void, int, }
+         * Follow(fun-decl) → { $, void, int }
          */
 
         matchToken(TokenType.LEFT_PAREN_TOKEN);
@@ -640,7 +640,7 @@ public class CMinusParser implements Parser {
     }
     private ArrayList<Statement> parseStmtList() throws Exception {
         /* statement-list → {statement}
-         * First(statement-list) → { ε. ID, NUM, (, ;, {, if, while, return }
+         * First(statement-list) → { ε, ID, NUM, (, ;, {, if, while, return }
          * Follow(statement-list) → { “}” }
          */
         ArrayList<Statement> SL = new ArrayList<Statement>();
@@ -715,7 +715,7 @@ public class CMinusParser implements Parser {
     private SelectionStmt parseSelectionStmt() throws Exception {
         /* selection-stmt → if “(“ expression “)” statement [else statement]
          * First(selection-stmt) → { if }
-         * Follow(selection-stmt) → { }, ID, NUM, (, {, if, while, return, else }
+         * Follow(selection-stmt) → { }, ID, NUM, (, ;, {, if, while, return, else }
          */
         matchToken(TokenType.IF_TOKEN);
         matchToken(TokenType.LEFT_PAREN_TOKEN);
@@ -734,7 +734,7 @@ public class CMinusParser implements Parser {
     private IterationStmt parseIterationStmt() throws Exception {
         /* iteration-stmt → while “(” expression “)” statement
          * First(iteration-stmt) → { while }
-         * Follow(iteration-stmt) → { }, ID, NUM, (, {, if, while, return, else }
+         * Follow(iteration-stmt) → { }, ID, NUM, (, ;, {, if, while, return, else }
          */
 
         matchToken(TokenType.WHILE_TOKEN);
@@ -749,7 +749,7 @@ public class CMinusParser implements Parser {
     private ReturnStmt parseReturnStmt() throws Exception {
         /* return-stmt → return [expression] ;
          * First(return-stmt) → { return }
-         * Follow(return-stmt) → { }, ID, NUM, (, *, /, ;, {, if, while, return, else }
+         * Follow(return-stmt) → { }, ID, NUM, (, ;, {, if, while, return, else }
          */
 
         ReturnStmt RS = null;
@@ -769,8 +769,8 @@ public class CMinusParser implements Parser {
 
     private Expression parseExpression() throws Exception {
         /* expression → ID expression’ | NUM simple-expression’ | (expression) simple-expression’
-         * First(expression) → { ID, NUM, (}
-         * Follow(expression) → { ;, ), ], “,”, *, /, +, - }
+         * First(expression) → { ID, NUM, ( }
+         * Follow(expression) → { ;, ), ], “,” }
          */
 
         Expression E = null;
@@ -882,8 +882,8 @@ public class CMinusParser implements Parser {
     }
     private Expression parseSimpleExpr2(Expression LHS) throws Exception {
         /* simple-expression’ → additive-expression’ [relop additive expression]
-         * First(simple-expression’) → { ε, *, /, +, - }
-         * Follow(simple-expression’) → { ;, ), ], “,”, *, /, +, - }
+         * First(simple-expression’) → { ε, *, /, +, -, <, <=, >, >=, ==, != }
+         * Follow(simple-expression’) → { ;, ), ], “,” }
          */
         Expression SE2 = LHS;
         
@@ -909,7 +909,7 @@ public class CMinusParser implements Parser {
     private Expression parseAdditiveExpr() throws Exception {
         /* additive-expression → term {addop term}
          * First(additive-expression) → { (, ID, NUM }
-         * Follow(additive-expression) → { ;, ), ], “,”, *, /, +, - }
+         * Follow(additive-expression) → { ;, ), ], “,” }
          */
 
         Expression LHS = parseTerm();
@@ -927,7 +927,7 @@ public class CMinusParser implements Parser {
     private Expression parseAdditiveExpr2(Expression inLHS) throws Exception {
         /* additive-expression’ → term’ {addop term}
          * First(additive-expression’) → { ε, *, /, +, - }
-         * Follow(additive-expression’) → { <, >, =, !, ;, ), ], “,”, *, /, +, - }
+         * Follow(additive-expression’) → { <, >, =, !, ;, ), ], “,” }
          */
 
         Expression LHS = inLHS;
@@ -948,7 +948,7 @@ public class CMinusParser implements Parser {
     private Expression parseTerm() throws Exception {
         /* term → factor {mulop factor}
          * First(term) → { (, ID, NUM }
-         * Follow(term) → { +, -, <, >, =, !, ;, ), ], “,”, *, /, +, - }
+         * Follow(term) → { +, -, <, >, =, !, ;, ), ], “,” }
          */
 
         Expression LHS = parseFactor();
@@ -965,7 +965,7 @@ public class CMinusParser implements Parser {
     private Expression parseTerm2(Expression inLHS) throws Exception {
         /* term’ → {mulop factor}
          * First(term’) → { ε. *, / }
-         * Follow(term’) → { +, - }
+         * Follow(term’) → { +, -, <, <=, >, >=, ==, !=, ;, ), ], “,” }
          */
 
         Expression LHS = inLHS;
@@ -982,7 +982,7 @@ public class CMinusParser implements Parser {
     private Expression parseFactor() throws Exception {
         /* factor → “(” expression “)” | ID varcall | NUM
          * First(factor) → { (, ID, NUM }
-         * Follow(factor) → { *, /, +, -, <, >, =, !, ;, ), ], “,”, *, /, +, - }
+         * Follow(factor) → { *, /, +, -, <, >, =, !, ;, ), ], “,” }
          */
 
         Expression F = null;
@@ -1023,19 +1023,19 @@ public class CMinusParser implements Parser {
             matchToken(TokenType.RIGHT_BRACKET_TOKEN);
         } 
         else if (checkToken(TokenType.MULT_TOKEN) 
-        || checkToken(TokenType.DIVIDE_TOKEN) 
-        || checkToken(TokenType.PLUS_TOKEN) 
-        || checkToken(TokenType.MINUS_TOKEN) 
-        || checkToken(TokenType.LESS_TOKEN) 
-        || checkToken(TokenType.GREATER_TOKEN) 
-        || checkToken(TokenType.LESS_EQUAL_TOKEN) 
-        || checkToken(TokenType.GREATER_EQUAL_TOKEN) 
-        || checkToken(TokenType.EQUAL_TOKEN) 
-        || checkToken(TokenType.NOT_EQUAL_TOKEN) 
-        || checkToken(TokenType.SEMI_TOKEN) 
-        || checkToken(TokenType.RIGHT_PAREN_TOKEN) 
-        || checkToken(TokenType.RIGHT_BRACKET_TOKEN) 
-        || checkToken(TokenType.COMMA_TOKEN)) {
+            || checkToken(TokenType.DIVIDE_TOKEN) 
+            || checkToken(TokenType.PLUS_TOKEN) 
+            || checkToken(TokenType.MINUS_TOKEN) 
+            || checkToken(TokenType.LESS_TOKEN) 
+            || checkToken(TokenType.GREATER_TOKEN) 
+            || checkToken(TokenType.LESS_EQUAL_TOKEN) 
+            || checkToken(TokenType.GREATER_EQUAL_TOKEN) 
+            || checkToken(TokenType.EQUAL_TOKEN) 
+            || checkToken(TokenType.NOT_EQUAL_TOKEN) 
+            || checkToken(TokenType.SEMI_TOKEN) 
+            || checkToken(TokenType.RIGHT_PAREN_TOKEN) 
+            || checkToken(TokenType.RIGHT_BRACKET_TOKEN) 
+            || checkToken(TokenType.COMMA_TOKEN)) {
             return ID;
         }
         
@@ -1043,7 +1043,7 @@ public class CMinusParser implements Parser {
     }
     private ArrayList <Expression> parseArgs() throws Exception {
         /* args → arg-list | ε
-         * First(args) → { ID, NUM, (, ε, *, / }
+         * First(args) → { ID, NUM, (, ε }
          * Follow(args) → { ) }
          */
 
@@ -1059,10 +1059,10 @@ public class CMinusParser implements Parser {
     }
     private ArrayList<Expression> parseArgList() throws Exception {
         /* arg-list → expression {, expression}
-         * First(arg-list) → { ID, NUM, (, ε, *, / }
+         * First(arg-list) → { ID, NUM, ( }
          * Follow(arg-list) → { ) }
          */
-        
+
         ArrayList < Expression > argList = new ArrayList < Expression > ();
 
         Expression nextExp = parseExpression();
