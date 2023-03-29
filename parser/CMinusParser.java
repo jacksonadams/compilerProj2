@@ -2,6 +2,7 @@ package parser;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
 import java.io.FileWriter;
 
 import javax.security.auth.x500.X500Principal;
@@ -327,7 +328,7 @@ public class CMinusParser implements Parser {
 
     public class CallExpression extends Expression {
         // example: gcd(3, 4)
-        public CallExpression (VarExpression LHS, Expression[] args){
+        public CallExpression (VarExpression LHS, ArrayList<Expression> args){
 
         }
 
@@ -376,7 +377,6 @@ public class CMinusParser implements Parser {
         // Program returnProgram = new Program();
 
         List<Decl> declList = new ArrayList<Decl>();
-        Token temp = scanner.getNextToken();
 
         // check if next token is in first set
         while(checkToken(TokenType.INT_TOKEN) || checkToken(TokenType.VOID_TOKEN)){
@@ -733,11 +733,20 @@ public class CMinusParser implements Parser {
         if(checkToken(TokenType.IDENT_TOKEN)){
             temp = matchToken(TokenType.IDENT_TOKEN);
             String ID = (String)temp.getData();
+            VarExpression var = new VarExpression(ID);
 
-            Expression E2 = parseExpression2(ID);
+            Expression E2 = parseExpression2(var);
+
+            // Do something with E2
         }
         else if(checkToken(TokenType.NUM_TOKEN)){
+            temp = matchToken(TokenType.NUM_TOKEN);
+            int value = (int)temp.getData();
 
+            NumExpression NE = new NumExpression(value);
+            Expression SE2 = parseSimpleExpr2();
+
+            // Do something with NE and SE2
         }
         else if(checkToken(TokenType.LEFT_PAREN_TOKEN)){
 
@@ -746,19 +755,16 @@ public class CMinusParser implements Parser {
         return E;
     }
     
-    private Expression parseExpression2(String ID){ 
+    private Expression parseExpression2(VarExpression LHS){ 
         /* expression’ → = expression | "["expression"]" expression’’ | (args) simple-expression’ | simple-expression’
          * First(expression’) → { =, [, (, ε, *, /, +, -, <, <=, >, >=, ==, != }
          * Follow(expression’) → { ;, ), ], “,” }
          */
         Expression E2 = null;
-        int[] myVar;
-        //myVar[7 < 1] = 3;
 
         if(checkToken(TokenType.ASSIGN_TOKEN)){
             matchToken(TokenType.ASSIGN_TOKEN);
 
-            VarExpression LHS = new VarExpression(ID);
             Expression RHS = parseExpression();
             E2 = new AssignExpression(LHS, RHS);
         }
@@ -768,9 +774,8 @@ public class CMinusParser implements Parser {
             Expression E = parseExpression();
 
             matchToken(TokenType.RIGHT_BRACKET_TOKEN);
-
-            VarExpression tempE = new VarExpression(ID);
-            Expression E3 = parseExpression3(tempE);
+;
+            Expression E3 = parseExpression3(LHS);
 
             /*
              * Do something with all these expressions
@@ -779,7 +784,7 @@ public class CMinusParser implements Parser {
         else if(checkToken(TokenType.LEFT_PAREN_TOKEN)){
             matchToken(TokenType.LEFT_PAREN_TOKEN);
 
-            Expression args = parseArgs();
+            ArrayList<Expression> args = parseArgs();
             // Do a varcall with the args
 
             matchToken(TokenType.RIGHT_PAREN_TOKEN);
@@ -841,6 +846,7 @@ public class CMinusParser implements Parser {
          * Follow(simple-expression’) → { ;, ), ], “,” }
          */
         Expression SE2 = null;
+        Token temp;
 
         Expression AE2 = parseAdditiveExpr2();
 
@@ -850,8 +856,15 @@ public class CMinusParser implements Parser {
         || checkToken(TokenType.GREATER_EQUAL_TOKEN)
         || checkToken(TokenType.EQUAL_TOKEN)
         || checkToken(TokenType.NOT_EQUAL_TOKEN)){
+            temp = advanceToken();
+            String relop = (String)temp.getData();
+            
             // Create a binary expression
         }
+
+        Expression AE = parseAdditiveExpr();
+
+        // Create a binary expression
 
         return SE2;
     }
@@ -882,6 +895,21 @@ public class CMinusParser implements Parser {
          * Follow(term) → { +, -, <, >, =, !, ;, ), ], “,”, *, /, +, - }
          */
         Expression T = null;
+        Token temp;
+
+        Expression factor = parseFactor();
+
+        // Make this into an expression that T can be
+
+        while(checkToken(TokenType.MULT_TOKEN)
+        || checkToken(TokenType.DIVIDE_TOKEN)){
+            temp = advanceToken();
+            String mulop = (String)temp.getData();
+
+            factor = parseFactor();
+
+            // Make this into an expression that T can be
+        }
 
         return T;
     }
@@ -892,6 +920,17 @@ public class CMinusParser implements Parser {
          * Follow(term’) → { +, - }
          */
         Expression T2 = null;
+        Token temp;
+
+        while(checkToken(TokenType.MULT_TOKEN)
+        || checkToken(TokenType.DIVIDE_TOKEN)){
+            temp = advanceToken();
+            String mulop = (String)temp.getData();
+
+            Expression factor = parseFactor();
+
+            // Make this into an expression that T can be
+        }
 
         return T2;
     }
@@ -902,37 +941,84 @@ public class CMinusParser implements Parser {
          * Follow(factor) → { *, /, +, -, <, >, =, !, ;, ), ], “,”, *, /, +, - }
          */
         Expression F = null;
+        Token temp;
+
+        if(checkToken(TokenType.LEFT_PAREN_TOKEN)){
+            matchToken(TokenType.LEFT_PAREN_TOKEN);
+
+            F = parseExpression();
+
+            matchToken(TokenType.RIGHT_PAREN_TOKEN);
+        }
+        else if(checkToken(TokenType.IDENT_TOKEN)){
+            temp = matchToken(TokenType.IDENT_TOKEN);
+            String name = (String)temp.getData();
+            VarExpression ID = new VarExpression(name);
+
+            F = parseVarCall(ID);
+        }
+        else if(checkToken(TokenType.NUM_TOKEN)){
+            temp = matchToken(TokenType.NUM_TOKEN);
+            int value = (int)temp.getData();
+            F = new NumExpression(value);
+        }
 
         return F;
     }
     
-    private CallExpression parseVarCall(){ 
+    private CallExpression parseVarCall(VarExpression ID){ 
         /* varcall → “(“ args “)” | “[“ expression “]” | ε
          * First(varcall) → { (, [, ε }
          * Follow(varcall) → { *, /, +, -, <, >, =, !, ;, ), ], “,”, *, /, +, - }
          */
-        CallExpression varcall = null;
+        CallExpression varCall = null;
 
-        return varcall;
+        if(checkToken(TokenType.LEFT_PAREN_TOKEN)){
+            matchToken(TokenType.LEFT_PAREN_TOKEN);
+    
+            ArrayList<Expression> args = parseArgs();
+    
+            matchToken(TokenType.RIGHT_PAREN_TOKEN);
+
+            varCall = new CallExpression(ID, args);
+        }
+        else if(checkToken(TokenType.LEFT_BRACKET_TOKEN)){
+            matchToken(TokenType.LEFT_BRACKET_TOKEN);
+
+            Expression E = parseExpression();
+        }
+
+
+        return varCall;
     }
     
-    private Expression parseArgs(){ 
+    private ArrayList<Expression> parseArgs(){ 
         /* args → arg-list | ε
-         * First(args) → { ID, NUM, (, ε, *, / }
+         * First(args) → { ID, NUM, (, ε }
          * Follow(args) → { ) }
          */
-        Expression args = null;
+        ArrayList<Expression> args = null;
+
+        if(checkToken(TokenType.IDENT_TOKEN)
+        || checkToken(TokenType.NUM_TOKEN)
+        || checkToken(TokenType.LEFT_PAREN_TOKEN)){
+            args = parseArgList();
+        }
 
         return args;
     }
     
     private ArrayList<Expression> parseArgList(){ 
         /* arg-list → expression {, expression}
-         * First(arg-list) → { ID, NUM, (, ε, *, / }
+         * First(arg-list) → { ID, NUM, ( }
          * Follow(arg-list) → { ) }
          */
-        ArrayList<Expression> argList = null;
+        ArrayList<Expression> argList = new ArrayList<Expression>();
 
+        Expression E = parseExpression();
+        
+        
+        
         return argList;
     }
 
