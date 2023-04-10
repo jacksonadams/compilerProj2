@@ -417,11 +417,11 @@ public class CMinusParser implements Parser {
         ArrayList < Decl > declList = new ArrayList < Decl > ();
 
         // check if next token is in first set
-        while (checkToken(TokenType.INT_TOKEN) 
-        || checkToken(TokenType.VOID_TOKEN)) {
+        do {
             Decl nextDecl = parseDecl();
             declList.add(nextDecl);
-        }
+        } while (checkToken(TokenType.INT_TOKEN) 
+              || checkToken(TokenType.VOID_TOKEN));
 
         // if we're no longer in the first set, check if we're in the follow set - if yes, continue, if not, error
         if (!checkToken(TokenType.EOF_TOKEN)) {
